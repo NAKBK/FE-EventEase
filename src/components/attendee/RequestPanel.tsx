@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Info, Loader2, Send, TriangleAlert } from "lucide-react";
+import { ChevronDown, Info, Loader2, Send, TriangleAlert } from "lucide-react";
 import {
   AccessibilityRequest,
   confirmRequest,
@@ -22,6 +22,7 @@ import {
   requestTone,
   statusLabel,
   toLocalInputValue,
+  walkingLabel,
 } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
 import { JourneyStepper, journeyStep } from "@/components/attendee/JourneyStepper";
@@ -38,19 +39,42 @@ function requestErrorMessage(err: unknown) {
   return getErrorMessage(err, "Gagal mengirim permintaan.");
 }
 
-function NeedChips({ profile }: { profile: NeedProfile }) {
+// Collapsed by default: the full need list is long and rarely needs re-reading.
+function NeedsDetails({ title, profile, footnote, action }: { title: string; profile: NeedProfile; footnote?: string; action?: React.ReactNode }) {
+  const facilities = needSummary(profile).length - 1;
+
   return (
-    <ul className="flex flex-wrap gap-1.5">
-      {needSummary(profile).map((label) => (
-        <li key={label} className="rounded-full bg-navy-50 px-2.5 py-1 text-xs font-bold text-navy-900">
-          {label}
-        </li>
-      ))}
-    </ul>
+    <details className="group rounded-xl border border-line bg-white">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-bold text-navy-900">
+        <span>
+          {title} <span className="font-normal text-ink-500">· {facilities} fasilitas, jarak {walkingLabel(profile.walking_distance).toLowerCase()}</span>
+        </span>
+        <span className="flex items-center gap-3">
+          {action}
+          <ChevronDown className="size-4 text-ink-500 transition-transform group-open:rotate-180" />
+        </span>
+      </summary>
+      <div className="border-t border-line px-3 py-2.5">
+        <ul className="flex flex-wrap gap-1.5">
+          {needSummary(profile).map((label) => (
+            <li key={label} className="rounded-full bg-navy-50 px-2.5 py-0.5 text-[11px] font-bold text-navy-900">
+              {label}
+            </li>
+          ))}
+        </ul>
+        {footnote && <p className="mt-2 text-xs text-ink-500">{footnote}</p>}
+      </div>
+    </details>
   );
 }
 
-export function RequestPanel({ event }: { event: PanelEvent }) {
+interface RequestPanelProps {
+  event: PanelEvent;
+  // Lets a parent (e.g. the /request event list) refresh when this panel changes a request.
+  onChange?: () => void;
+}
+
+export function RequestPanel({ event, onChange }: RequestPanelProps) {
   const [profile, setProfile] = useState<NeedProfile | null>(null);
   const [request, setRequest] = useState<AccessibilityRequest | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,6 +117,7 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
     try {
       await createRequest(event.id, { arrival_estimate: fromLocalInputValue(arrival), note });
       await load();
+      onChange?.();
     } catch (err: unknown) {
       setError(requestErrorMessage(err));
       if (isApiError(err, "ACTIVE_REQUEST_EXISTS")) await load();
@@ -110,6 +135,7 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
       await confirmRequest(request.id, accepted);
       setConfirmingDecline(false);
       await load();
+      onChange?.();
     } catch (err: unknown) {
       if (isApiError(err, "INVALID_REQUEST_STATE") || isApiError(err, "CANNOT_FULFILL")) {
         setError("Status permintaan sudah berubah. Tampilan diperbarui.");
@@ -141,89 +167,85 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
         : "";
 
   return (
-    <div className="flex flex-col gap-4">
-      <JourneyStepper current={journeyStep(stepStatus, profile !== null)} />
+    <div className="flex flex-col gap-3">
+      <JourneyStepper compact current={journeyStep(stepStatus, profile !== null)} />
       <p className="text-xs text-ink-500">
-        Kamu dapat datang kapan pun. Langkah 3 sampai 6 hanya untuk mendapat komitmen tertulis dukungan aksesibilitas dan
-        memverifikasinya setelah event.
+        Kamu dapat datang kapan pun. Alur ini hanya untuk mendapat komitmen tertulis soal dukungan aksesibilitas.
       </p>
 
       {loadError && (
-        <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{loadError}</div>
+        <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-2.5 text-sm font-semibold text-ink-700">{loadError}</div>
       )}
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{error}</div>
+        <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-2.5 text-sm font-semibold text-ink-700">{error}</div>
       )}
 
       {active ? (
-        <div className="flex flex-col gap-3 rounded-2xl border border-line bg-bg p-4">
+        <div className="flex flex-col gap-3 rounded-2xl border border-line bg-bg p-3.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-bold", requestTone(active.status))}>
+            <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold", requestTone(active.status))}>
               Permintaanmu: {statusLabel(active.status)}
             </span>
             <p className="text-xs text-ink-500">Dikirim {formatDateTime(active.created_at)}</p>
           </div>
 
-          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
-            <div>
-              <dt className="text-xs font-bold text-ink-500 uppercase mb-1">Perkiraan tiba</dt>
-              <dd className="text-navy-900">{formatDateTime(active.arrival_estimate)}</dd>
+          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 items-stretch text-sm">
+            <div className="rounded-xl bg-white border border-line px-3 py-2 h-full">
+              <dt className="text-[11px] font-bold text-ink-500 uppercase">Perkiraan tiba di lokasi</dt>
+              <dd className="mt-0.5 text-navy-900">{formatDateTime(active.arrival_estimate)}</dd>
             </div>
-            <div>
-              <dt className="text-xs font-bold text-ink-500 uppercase mb-1">Pesanmu</dt>
-              <dd className="text-navy-900">{active.note}</dd>
+            <div className="rounded-xl bg-white border border-line px-3 py-2 h-full">
+              <dt className="text-[11px] font-bold text-ink-500 uppercase">Pesanmu</dt>
+              <dd className="mt-0.5 text-navy-900">{active.note}</dd>
             </div>
           </dl>
 
-          <div>
-            <p className="text-xs font-bold text-ink-500 uppercase mb-1">Kebutuhan yang dikirim (snapshot)</p>
-            <NeedChips profile={active.needs_snapshot} />
-          </div>
+          <NeedsDetails title="Kebutuhan yang dikirim" profile={active.needs_snapshot} footnote="Salinan profilmu saat permintaan dikirim." />
 
           {active.status === "pending" && (
             <p className="text-sm text-ink-500">Menunggu respons penyelenggara. Kamu tidak perlu mengirim ulang.</p>
           )}
 
           {active.response && (
-            <div className="rounded-xl border border-line bg-white px-4 py-3 text-sm">
-              <p className="text-xs font-bold text-ink-500 uppercase mb-1">Respons penyelenggara</p>
-              <p className="font-bold text-navy-900">{decisionLabel(active.response.decision)}</p>
-              <p className="text-ink-700 mt-1">{active.response.note}</p>
-              <p className="text-xs text-ink-500 mt-2">{formatDateTime(active.response.responded_at)}</p>
+            <div className="rounded-xl border border-line bg-white px-3 py-2.5 text-sm">
+              <p className="text-[11px] font-bold text-ink-500 uppercase">Respons penyelenggara</p>
+              <p className="mt-0.5 font-bold text-navy-900">{decisionLabel(active.response.decision)}</p>
+              <p className="text-ink-700 mt-0.5">{active.response.note}</p>
+              <p className="text-[11px] text-ink-500 mt-1">{formatDateTime(active.response.responded_at)}</p>
             </div>
           )}
 
           {active.status === "responded" && (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm text-ink-700">
-                Terima respons ini untuk menyimpannya sebagai komitmen tertulis penyelenggara, atau tolak untuk menutup permintaan.
+            <div className="flex flex-col gap-2 border-t border-line pt-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-ink-500 flex-1">
+                Terima untuk menyimpan respons ini sebagai komitmen yang nanti kamu verifikasi, atau tolak untuk menutup permintaan.
               </p>
               {confirmingDecline ? (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-bold text-navy-900">Tolak dan tutup permintaan ini?</span>
+                  <span className="text-xs font-bold text-navy-900">Tolak dan tutup?</span>
                   <button
                     onClick={() => respond(false)}
                     disabled={acting}
-                    className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70"
+                    className="rounded-xl bg-navy-900 px-3 py-1.5 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70"
                   >
                     Ya, tolak
                   </button>
                   <button
                     onClick={() => setConfirmingDecline(false)}
-                    className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-bg-soft"
+                    className="rounded-xl border border-line bg-white px-3 py-1.5 text-sm font-bold text-navy-900 hover:bg-bg-soft"
                   >
                     Batal
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2">
                   <button
                     onClick={() => respond(true)}
                     disabled={acting}
                     className="flex items-center gap-2 rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
                   >
                     {acting && <Loader2 className="size-4 animate-spin" />}
-                    Terima respons
+                    Terima
                   </button>
                   <button
                     onClick={() => setConfirmingDecline(true)}
@@ -239,9 +261,9 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
 
           {active.status === "confirmed" &&
             (event.status === "completed" ? (
-              <div className="flex flex-col gap-2 rounded-xl border border-navy-500/30 bg-navy-50 px-4 py-3 text-sm text-ink-700 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 rounded-xl border border-navy-500/30 bg-navy-50 px-3 py-2.5 text-sm text-ink-700 sm:flex-row sm:items-center sm:justify-between">
                 <p>
-                  <strong>Event sudah selesai.</strong> Bandingkan komitmen penyelenggara di atas dengan pengalaman aslimu.
+                  <strong>Event sudah selesai.</strong> Bandingkan komitmen di atas dengan pengalaman aslimu.
                 </p>
                 <Link
                   href={`/verification?request=${active.id}`}
@@ -251,9 +273,8 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
                 </Link>
               </div>
             ) : (
-              <p className="text-sm text-ink-700">
-                Komitmen tersimpan. Setelah event berakhir ({formatDateTime(event.ends_at)}), permintaan ini bisa kamu verifikasi
-                langsung dari sini.
+              <p className="text-xs text-ink-500 border-t border-line pt-3">
+                Komitmen tersimpan. Setelah event berakhir ({formatDateTime(event.ends_at)}), kamu bisa memverifikasinya dari sini.
               </p>
             ))}
         </div>
@@ -266,31 +287,29 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
           </p>
         </div>
       ) : (
-        <form onSubmit={submit} className="flex flex-col gap-4">
+        <form onSubmit={submit} className="flex flex-col gap-3">
           {request && (
-            <div className="rounded-xl bg-bg-soft px-4 py-3 text-sm text-ink-700">
+            <div className="rounded-xl bg-bg-soft px-3 py-2 text-xs text-ink-700">
               Permintaan sebelumnya untuk event ini: <strong>{statusLabel(request.status)}</strong>. Kamu boleh mengirim permintaan baru.
             </div>
           )}
 
           {profile ? (
-            <div className="rounded-xl border border-line bg-bg px-4 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <p className="text-xs font-bold text-ink-500 uppercase">Kebutuhan yang akan dikirim</p>
-                <Link href="/profile" className="text-xs font-bold text-navy-700 underline">
-                  Ubah profil
+            <NeedsDetails
+              title="Kebutuhan yang akan dikirim"
+              profile={profile}
+              footnote="Disalin dari profilmu saat dikirim. Perubahan profil setelahnya tidak mengubah permintaan ini."
+              action={
+                <Link href="/profile" className="font-bold text-navy-700 underline" onClick={(e) => e.stopPropagation()}>
+                  Ubah
                 </Link>
-              </div>
-              <NeedChips profile={profile} />
-              <p className="text-xs text-ink-500 mt-2">
-                Disalin dari profilmu saat permintaan dikirim. Perubahan profil setelahnya tidak mengubah permintaan ini.
-              </p>
-            </div>
+              }
+            />
           ) : (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-50 px-4 py-3 text-sm text-ink-700">
-              <div className="flex items-start gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-50 px-3 py-2.5 text-sm text-ink-700">
+              <div className="flex items-start gap-2.5">
                 <TriangleAlert className="size-4 text-amber-500 shrink-0 mt-0.5" />
-                <p>Profil kebutuhanmu belum disimpan. Permintaan membawa kebutuhanmu ke penyelenggara, jadi isi profil dulu.</p>
+                <p>Profil kebutuhanmu belum disimpan. Isi dulu agar kebutuhanmu ikut terkirim.</p>
               </div>
               <Link href="/profile" className="rounded-xl bg-navy-900 px-4 py-2 text-center text-sm font-bold text-white hover:bg-navy-800">
                 Isi profil
@@ -298,26 +317,26 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 items-stretch">
+            <div className="flex flex-col gap-1">
               <label htmlFor="arrival" className="text-sm font-semibold text-navy-900">
-                Perkiraan waktu tiba di lokasi
+                Perkiraan waktu tiba
               </label>
               <input
                 id="arrival"
                 type="datetime-local"
                 value={arrival}
                 onChange={(e) => setArrival(e.target.value)}
-                className="px-4 py-2.5 rounded-xl border border-line bg-bg text-sm focus:outline-none focus:border-navy-500"
+                className="px-3 py-2 rounded-xl border border-line bg-bg text-sm focus:outline-none focus:border-navy-500"
                 required
               />
               <p className="text-xs text-ink-500">
-                Bukan jam tiket. Penyelenggara memakainya untuk menyiapkan bantuan, misalnya drop-off atau pendampingan, saat kamu tiba.
-                Event berlangsung {formatDateTime(event.starts_at)} – {formatDateTime(event.ends_at)}.
+                Kapan kamu perkirakan tiba di lokasi, agar penyelenggara bisa menyiapkan bantuan. Event: {formatDateTime(event.starts_at)} –{" "}
+                {formatDateTime(event.ends_at)}.
               </p>
               {arrivalWarning && <p className="text-xs font-bold text-ink-700">⚠ {arrivalWarning}</p>}
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <label htmlFor="note" className="text-sm font-semibold text-navy-900">
                 Pesan untuk penyelenggara
               </label>
@@ -326,24 +345,27 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 maxLength={500}
-                rows={4}
-                className="px-4 py-2.5 rounded-xl border border-line bg-bg text-sm resize-none focus:outline-none focus:border-navy-500"
+                rows={3}
+                className="flex-1 px-3 py-2 rounded-xl border border-line bg-bg text-sm resize-none focus:outline-none focus:border-navy-500"
                 required
               />
               <div className="flex items-start justify-between gap-3">
-                <p className="text-xs text-ink-500">Sebutkan bantuan spesifik yang kamu butuhkan, misalnya jalur ramp atau area drop-off.</p>
+                <p className="text-xs text-ink-500">Sebut bantuan yang kamu butuhkan, mis. ramp atau drop-off.</p>
                 <p className="text-xs text-ink-300 shrink-0">{note.length}/500</p>
               </div>
             </div>
           </div>
 
-          <button
-            disabled={submitting || !profile || !note.trim()}
-            className="w-full sm:w-fit rounded-xl bg-navy-900 px-6 py-2.5 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
-          >
-            {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            Kirim permintaan
-          </button>
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 border-t border-line pt-3">
+            <p className="text-xs text-ink-500">Satu event hanya punya satu permintaan aktif.</p>
+            <button
+              disabled={submitting || !profile || !note.trim()}
+              className="w-full sm:w-fit rounded-xl bg-navy-900 px-6 py-2.5 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
+            >
+              {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              Kirim permintaan
+            </button>
+          </div>
         </form>
       )}
     </div>

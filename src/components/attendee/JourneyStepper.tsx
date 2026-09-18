@@ -21,7 +21,38 @@ export function journeyStep(status: RequestStatus | null, hasProfile: boolean) {
   return hasProfile ? 2 : 0;
 }
 
-export function JourneyStepper({ current, className }: { current: number; className?: string }) {
+interface JourneyStepperProps {
+  current: number;
+  className?: string;
+  // Slim progress bar with only the current step named; used inside forms where the full stepper is too heavy.
+  compact?: boolean;
+}
+
+export function JourneyStepper({ current, className, compact }: JourneyStepperProps) {
+  if (compact) {
+    const label = current >= steps.length ? "Selesai" : steps[Math.max(0, current)];
+    return (
+      <div
+        className={cn("flex flex-col gap-1.5", className)}
+        role="img"
+        aria-label={`Langkah ${Math.min(current + 1, steps.length)} dari ${steps.length}: ${label}`}
+      >
+        <div className="flex gap-1" aria-hidden="true">
+          {steps.map((step, index) => (
+            <span
+              key={step}
+              className={cn("h-1.5 flex-1 rounded-full", index < current ? "bg-green-500" : index === current ? "bg-navy-900" : "bg-line")}
+            />
+          ))}
+        </div>
+        <p className="text-xs font-bold text-navy-900" aria-hidden="true">
+          Langkah {Math.min(current + 1, steps.length)} dari {steps.length}
+          <span className="font-normal text-ink-500"> · {label}</span>
+        </p>
+      </div>
+    );
+  }
+
   return (
     <ol className={cn("grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2", className)} aria-label="Alur dukungan aksesibilitas">
       {steps.map((label, index) => {

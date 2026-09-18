@@ -171,11 +171,14 @@ export default function HistoryPage() {
                       </h2>
                     </div>
                     <div className="flex flex-col gap-1 text-xs text-ink-500 sm:items-end shrink-0">
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="size-3.5" /> Tiba {formatDateTime(request.arrival_estimate)}
+                      <span
+                        className="flex items-center gap-1.5"
+                        title="Waktu yang kamu perkirakan tiba di lokasi event. Kamu isi sendiri saat mengirim permintaan."
+                      >
+                        <Calendar className="size-3.5" /> Perkiraan tiba {formatDateTime(request.arrival_estimate)}
                       </span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="size-3.5" /> Dikirim {formatDateTime(request.created_at)}
+                      <span className="flex items-center gap-1.5" title="Waktu permintaan ini dikirim ke penyelenggara.">
+                        <Clock className="size-3.5" /> Diajukan {formatDateTime(request.created_at)}
                       </span>
                     </div>
                   </div>

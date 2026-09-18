@@ -178,8 +178,9 @@ function VerificationContent() {
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
           ) : requests.length > 0 ? (
-            <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[0.75fr_1.25fr] gap-4 items-start">
-              <MotionAside className="bg-white border border-line rounded-[2rem] p-5 shadow-sm" lift={false}>
+            <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[0.75fr_1.25fr] gap-4 items-stretch">
+              <MotionAside className="bg-white border border-line rounded-[2rem] p-5 shadow-sm h-full flex flex-col gap-4" lift={false}>
+                <div>
                 <h2 className="text-base font-bold text-navy-900 mb-3">Dari permintaanmu</h2>
                 <div className="space-y-2">
                   {requests.map((request) => {
@@ -210,6 +211,26 @@ function VerificationContent() {
                       </MotionCardButton>
                     );
                   })}
+                </div>
+                </div>
+
+                <div className="mt-auto rounded-2xl bg-bg-soft p-4 text-xs text-ink-700">
+                  <p className="text-[11px] font-bold text-ink-500 uppercase mb-2">Cara menilai</p>
+                  <ul className="flex flex-col gap-2">
+                    <li className="flex gap-2">
+                      <Check className="size-4 shrink-0 text-green-500" />
+                      <span><strong>Terpenuhi</strong>: sesuai yang dijanjikan.</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <Minus className="size-4 shrink-0 text-amber-500" />
+                      <span><strong>Sebagian</strong>: ada, tapi kurang dari janji.</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <X className="size-4 shrink-0 text-red-500" />
+                      <span><strong>Tidak</strong>: tidak ada atau tidak bisa dipakai.</span>
+                    </li>
+                  </ul>
+                  <p className="mt-3 text-ink-500">Nilai sesuai yang kamu alami sendiri. Jawabanmu ikut membentuk skor keandalan penyelenggara.</p>
                 </div>
               </MotionAside>
 
@@ -250,9 +271,12 @@ function VerificationContent() {
                           <legend className="sr-only">{needLabels[key]}</legend>
                           <div>
                             <p className="text-sm font-bold text-navy-900">{needLabels[key]}</p>
-                            <p className="text-xs text-ink-500">
-                              {needed} · klaim penyelenggara: <strong className="text-ink-700">{claimText(selectedRequest.claim, key)}</strong>
-                            </p>
+                            <div className="mt-1 flex flex-wrap gap-1.5">
+                              <span className="rounded-full bg-white border border-line px-2 py-0.5 text-[11px] font-bold text-ink-700">{needed}</span>
+                              <span className="rounded-full bg-navy-50 px-2 py-0.5 text-[11px] font-bold text-navy-900">
+                                Klaim: {claimText(selectedRequest.claim, key)}
+                              </span>
+                            </div>
                           </div>
                           <div className="mt-auto grid grid-cols-3 gap-1.5">
                             {options.map((option) => {
