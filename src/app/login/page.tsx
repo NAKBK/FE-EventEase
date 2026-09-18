@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { InteractiveGridPattern } from "@/components/ui/interactive-grid-pattern";
-import { ArrowLeft, Eye, EyeOff, Loader2, Home } from "lucide-react";
+import { Eye, EyeOff, Loader2, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { demoLogin, getErrorMessage, login, saveSession, type Role } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<Role | null>(null);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,33 +24,30 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || "Terjadi kesalahan saat login");
-      }
-
-      // Save token and role
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
-      if (data.user) {
-        if (data.user.role) localStorage.setItem("role", data.user.role);
-        if (data.user.id) localStorage.setItem("user_id", data.user.id);
-      }
+      const data = await login(email, password);
+      saveSession(data);
 
       // Redirect to home
-      router.push("/");
-    } catch (err: any) {
-      setError(err.message || "Email atau password salah");
+      router.push(data.user.role === "organizer" ? "/dashboard" : "/");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Email atau password salah"));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async (account: Role) => {
+    setError("");
+    setDemoLoading(account);
+
+    try {
+      const data = await demoLogin(account);
+      saveSession(data);
+      router.push(data.user.role === "organizer" ? "/dashboard" : "/");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Gagal masuk dengan akun demo"));
+    } finally {
+      setDemoLoading(null);
     }
   };
 
@@ -177,6 +176,25 @@ export default function LoginPage() {
                   {loading ? <Loader2 className="size-5 animate-spin" /> : "Masuk"}
                 </button>
               </form>
+
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleDemoLogin("attendee")}
+                  disabled={!!demoLoading}
+                  className="rounded-lg border border-line bg-white px-4 py-3 text-sm font-bold text-navy-900 hover:bg-ink-50 disabled:opacity-70 flex items-center justify-center"
+                >
+                  {demoLoading === "attendee" ? <Loader2 className="size-4 animate-spin" /> : "Demo Pengguna"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDemoLogin("organizer")}
+                  disabled={!!demoLoading}
+                  className="rounded-lg border border-line bg-white px-4 py-3 text-sm font-bold text-navy-900 hover:bg-ink-50 disabled:opacity-70 flex items-center justify-center"
+                >
+                  {demoLoading === "organizer" ? <Loader2 className="size-4 animate-spin" /> : "Demo Organizer"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
