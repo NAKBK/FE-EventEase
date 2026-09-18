@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Calendar, MapPin, Loader2 } from "lucide-react";
+import { Plus, Calendar, MapPin, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
 import Link from "next/link";
@@ -33,51 +33,126 @@ export default function EventManagementPage() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("all");
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(true);
-      setError("");
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  
+  const initialFormState = {
+    title: "",
+    description: "",
+    starts_at: "",
+    ends_at: "",
+    venue: {
+      name: "",
+      city: "",
+      address: "",
+    },
+    claim: {
+      step_free_entrance: 1,
+      elevator_or_ramp: 0.5,
+      accessible_restroom: 1,
+      accessible_seating: 1,
+      rest_area: 1,
+      parking_or_dropoff: 0.5,
+      walking_distance_m: 100,
+    }
+  };
+  const [formData, setFormData] = useState(initialFormState);
 
-      const token = localStorage.getItem("token");
-      const userId = localStorage.getItem("user_id");
-      const role = localStorage.getItem("role");
+  const fetchEvents = async () => {
+    setLoading(true);
+    setError("");
 
-      if (!token || !userId) {
-        router.push("/login");
-        return;
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("user_id");
+    const role = localStorage.getItem("role");
+
+    if (!token || !userId) {
+      router.push("/login");
+      return;
+    }
+
+    if (role !== "organizer") {
+      setError("Halaman ini khusus untuk penyelenggara (organizer).");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/api/events?mine=true`;
+      if (filter !== "all") {
+        url += `&status=${filter}`;
       }
 
-      if (role !== "organizer") {
-        setError("Halaman ini khusus untuk penyelenggara (organizer).");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        let url = `${process.env.NEXT_PUBLIC_API_URL}/api/events?mine=true`;
-        if (filter !== "all") {
-          url += `&status=${filter}`;
+      const eventsRes = await fetch(url, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json"
         }
+      });
 
-        const eventsRes = await fetch(url, {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Accept": "application/json"
-          }
-        });
+      if (!eventsRes.ok) throw new Error("Gagal mengambil data event.");
+      const eventsData = await eventsRes.json();
+      setEvents(eventsData);
+    } catch (err: any) {
+      setError(err.message || "Terjadi kesalahan sistem.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (!eventsRes.ok) throw new Error("Gagal mengambil data event.");
-        const eventsData = await eventsRes.json();
-        setEvents(eventsData);
-      } catch (err: any) {
-        setError(err.message || "Terjadi kesalahan sistem.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchEvents();
   }, [router, filter]);
+
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError("");
+    
+    const token = localStorage.getItem("token");
+    
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          ...formData,
+          claim: {
+            ...formData.claim,
+            step_free_entrance: Number(formData.claim.step_free_entrance),
+            elevator_or_ramp: Number(formData.claim.elevator_or_ramp),
+            accessible_restroom: Number(formData.claim.accessible_restroom),
+            accessible_seating: Number(formData.claim.accessible_seating),
+            rest_area: Number(formData.claim.rest_area),
+            parking_or_dropoff: Number(formData.claim.parking_or_dropoff),
+            walking_distance_m: Number(formData.claim.walking_distance_m),
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Gagal membuat acara.");
+      }
+
+      // Success
+      setIsModalOpen(false);
+      setFormData(initialFormState);
+      fetchEvents(); // Refresh data
+    } catch(err: any) {
+      setSubmitError(err.message || "Terjadi kesalahan koneksi.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
 
   const formatDate = (isoStr: string) => {
     const date = new Date(isoStr);
@@ -162,12 +237,13 @@ export default function EventManagementPage() {
             </div>
             
             <div className="relative z-10 w-full md:w-auto shrink-0">
-              <Link href="/event/create">
-                <button className="group relative inline-flex w-full md:w-auto px-8 h-12 md:h-14 items-center justify-center overflow-hidden rounded-full bg-white text-navy-900 font-bold shadow-md transition-colors">
-                  <span className="relative z-10">Daftarkan Acara &rarr;</span>
-                  <div className="absolute inset-0 z-0 bg-gold-400 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
-                </button>
-              </Link>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="group relative inline-flex w-full md:w-auto px-8 h-12 md:h-14 items-center justify-center overflow-hidden rounded-full bg-white text-navy-900 font-bold shadow-md transition-colors"
+              >
+                <span className="relative z-10">Daftarkan Acara &rarr;</span>
+                <div className="absolute inset-0 z-0 bg-gold-400 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
+              </button>
             </div>
           </div>
 
@@ -249,6 +325,214 @@ export default function EventManagementPage() {
 
         </div>
       </div>
+
+      {/* Modal Overlay */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-navy-900/60 backdrop-blur-sm flex justify-center items-center p-4 sm:p-6 opacity-100 transition-opacity">
+          <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl border border-navy-900/20 flex flex-col max-h-[90vh] overflow-hidden transform transition-all scale-100 relative">
+            
+            {/* Decorative Blurs */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-gold-400/20 rounded-full blur-[100px] -translate-y-1/4 translate-x-1/4 pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-navy-900/10 rounded-full blur-[100px] translate-y-1/4 -translate-x-1/4 pointer-events-none"></div>
+
+            {/* Modal Header */}
+            <div className="px-8 py-6 border-b border-line/50 flex justify-between items-center bg-transparent z-10">
+              <div>
+                <h2 className="text-2xl font-serif text-navy-900">Daftarkan Acara Baru</h2>
+                <p className="text-sm font-medium text-ink-500 mt-1">Isi detail acara dan info venue.</p>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 bg-ink-50 hover:bg-ink-100 rounded-full text-ink-500 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body (Scrollable) */}
+            <div className="flex-1 overflow-y-auto px-8 py-6 relative" ref={scrollRef}>
+              
+              {/* Scroll shadow indicators */}
+              <div className="fixed top-20 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent pointer-events-none z-10" />
+              
+              <form id="createEventForm" onSubmit={handleCreateEvent} className="flex flex-col gap-8 pb-4">
+                
+                {submitError && (
+                  <div className="p-4 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100">
+                    {submitError}
+                  </div>
+                )}
+
+                {/* Section 1: Detail Acara */}
+                <div className="space-y-4">
+                  <h3 className="text-base font-bold text-navy-900 border-b border-line pb-2">Detail Acara</h3>
+                  
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-navy-900" htmlFor="title">Nama Acara <span className="text-red-500">*</span></label>
+                    <input 
+                      id="title"
+                      type="text"
+                      placeholder="Contoh: Festival Inklusif Jakarta"
+                      className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-navy-900" htmlFor="description">Deskripsi Acara <span className="text-red-500">*</span></label>
+                    <textarea 
+                      id="description"
+                      placeholder="Jelaskan secara singkat tentang acara ini..."
+                      rows={3}
+                      className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full resize-none"
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-navy-900" htmlFor="starts_at">Waktu Mulai <span className="text-red-500">*</span></label>
+                      <input 
+                        id="starts_at"
+                        type="datetime-local"
+                        className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
+                        value={formData.starts_at}
+                        onChange={(e) => setFormData({...formData, starts_at: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-navy-900" htmlFor="ends_at">Waktu Selesai <span className="text-red-500">*</span></label>
+                      <input 
+                        id="ends_at"
+                        type="datetime-local"
+                        className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
+                        value={formData.ends_at}
+                        onChange={(e) => setFormData({...formData, ends_at: e.target.value})}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Lokasi / Venue */}
+                <div className="space-y-4">
+                  <h3 className="text-base font-bold text-navy-900 border-b border-line pb-2">Lokasi / Venue</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-navy-900" htmlFor="venue_name">Nama Lokasi <span className="text-red-500">*</span></label>
+                      <input 
+                        id="venue_name"
+                        type="text"
+                        placeholder="Contoh: Gedung Serbaguna A"
+                        className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
+                        value={formData.venue.name}
+                        onChange={(e) => setFormData({...formData, venue: {...formData.venue, name: e.target.value}})}
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-navy-900" htmlFor="venue_city">Kota <span className="text-red-500">*</span></label>
+                      <input 
+                        id="venue_city"
+                        type="text"
+                        placeholder="Contoh: Jakarta"
+                        className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
+                        value={formData.venue.city}
+                        onChange={(e) => setFormData({...formData, venue: {...formData.venue, city: e.target.value}})}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-navy-900" htmlFor="venue_address">Alamat Lengkap <span className="text-red-500">*</span></label>
+                    <textarea 
+                      id="venue_address"
+                      placeholder="Jalan, RT/RW, Kode Pos..."
+                      rows={2}
+                      className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full resize-none"
+                      value={formData.venue.address}
+                      onChange={(e) => setFormData({...formData, venue: {...formData.venue, address: e.target.value}})}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Section 3: Klaim Aksesibilitas */}
+                <div className="space-y-4">
+                  <div className="border-b border-line pb-2">
+                    <h3 className="text-base font-bold text-navy-900">Fasilitas Aksesibilitas</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { key: "step_free_entrance", label: "Pintu Masuk Tanpa Tangga" },
+                      { key: "elevator_or_ramp", label: "Lift atau Ramp" },
+                      { key: "accessible_restroom", label: "Toilet Aksesibel" },
+                      { key: "accessible_seating", label: "Area Duduk Aksesibel" },
+                      { key: "rest_area", label: "Area Istirahat Tenang" },
+                      { key: "parking_or_dropoff", label: "Parkir / Drop-off" },
+                    ].map((item) => (
+                      <div key={item.key} className="flex flex-col gap-2">
+                        <label className="text-xs font-medium text-navy-900">{item.label}</label>
+                        <select 
+                          className="px-3 py-2.5 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
+                          value={String((formData.claim as any)[item.key])}
+                          onChange={(e) => setFormData({...formData, claim: {...formData.claim, [item.key]: Number(e.target.value)}})}
+                        >
+                          <option value="1">Tersedia Penuh</option>
+                          <option value="0.5">Tersedia Sebagian</option>
+                          <option value="0">Tidak Tersedia</option>
+                        </select>
+                      </div>
+                    ))}
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-medium text-navy-900">Jarak Jalan Kaki (meter)</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        className="px-3 py-2.5 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
+                        value={formData.claim.walking_distance_m}
+                        onChange={(e) => setFormData({...formData, claim: {...formData.claim, walking_distance_m: Number(e.target.value)}})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-8 py-4 border-t border-line/50 bg-white/40 backdrop-blur-sm flex justify-end gap-3 z-10 rounded-b-[2rem]">
+              <button 
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-6 py-2.5 rounded-full text-sm font-bold text-navy-900 hover:text-gold-500 transition-colors"
+                disabled={isSubmitting}
+              >
+                Batal
+              </button>
+              <button 
+                type="submit"
+                form="createEventForm"
+                disabled={isSubmitting}
+                className="group relative inline-flex px-8 py-2.5 items-center justify-center overflow-hidden bg-navy-900 text-white rounded-full text-sm font-bold shadow-md transition-colors disabled:opacity-70 min-w-[120px]"
+              >
+                <span className="relative z-10 flex items-center justify-center transition-colors duration-300 group-hover:text-gold-400">
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Acara"}
+                </span>
+                <div className="absolute inset-0 z-0 bg-navy-800 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
