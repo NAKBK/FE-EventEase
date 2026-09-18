@@ -236,8 +236,64 @@ export default function Home() {
               Terus berkembang ke seluruh penjuru Indonesia. Dari Jakarta hingga pelosok daerah, visi kami adalah membuat setiap event jadi inklusif.
             </p>
           </div>
-          <div className="flex-1 w-full flex justify-center opacity-75">
-            <DottedMap className="fill-white/30 h-[300px] w-full max-w-[500px]" />
+          <div className="flex-1 w-full flex justify-end opacity-80 overflow-hidden md:-mr-8">
+            <div className="w-full max-w-[500px] md:max-w-[650px] scale-110 md:scale-125 origin-right">
+              <DottedMap 
+                className="fill-white/30 w-full h-auto aspect-[2/1]" 
+                markers={[{ lat: -2, lng: 118, size: 3 }]}
+                markerColor="#F97316" // Orange-500 for the pulse rings
+                renderMarkerOverlay={({ x, y, r, index }) => {
+                  const countryCode = "id"
+                  const label = "IDN"
+                  const href = `https://flagcdn.com/w80/${countryCode}.webp`
+                  const clipId = `flag-clip-${index}`
+                  
+                  const imgR = r * 0.8
+                  const fontSize = r * 0.9
+                  const pillH = r * 1.5
+                  const pillW = label.length * (fontSize * 0.62) + r * 1.4
+                  const pillX = x + r + r * 0.6
+                  const pillY = y - pillH / 2
+
+                  return (
+                    <g style={{ pointerEvents: "none" }}>
+                      <clipPath id={clipId}>
+                        <circle cx={x} cy={y} r={imgR} />
+                      </clipPath>
+
+                      <image
+                        href={href}
+                        x={x - imgR}
+                        y={y - imgR}
+                        width={imgR * 2}
+                        height={imgR * 2}
+                        preserveAspectRatio="xMidYMid slice"
+                        clipPath={`url(#${clipId})`}
+                      />
+
+                      <rect
+                        x={pillX}
+                        y={pillY}
+                        width={pillW}
+                        height={pillH}
+                        rx={pillH / 2}
+                        fill="rgba(107,114,128,0.9)" /* gray-500 */
+                      />
+                      <text
+                        x={pillX + r * 0.7}
+                        y={y + fontSize * 0.35}
+                        fontSize={fontSize}
+                        fill="white"
+                        fontFamily="sans-serif"
+                        fontWeight="600"
+                      >
+                        {label}
+                      </text>
+                    </g>
+                  )
+                }}
+              />
+            </div>
           </div>
         </div>
 
