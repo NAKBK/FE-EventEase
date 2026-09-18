@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, Save, UserRound } from "lucide-react";
 import { getErrorMessage, getNeeds, NeedProfile, saveNeeds } from "@/lib/api";
 import { defaultNeeds, formatDateTime, needLabels } from "@/lib/attendee-ui";
+import { MotionCardGrid, MotionCardLabel, MotionForm, MotionSection } from "@/components/ui/motion-card";
 
 export function AttendeeProfile() {
   const router = useRouter();
@@ -85,7 +86,7 @@ export function AttendeeProfile() {
   return (
     <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
       <div className="max-w-5xl mx-auto flex flex-col gap-8">
-        <section className="bg-white border border-line rounded-[2rem] p-8 shadow-sm">
+        <MotionSection className="bg-white border border-line rounded-[2rem] p-8 shadow-sm hover:border-navy-200">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="size-16 rounded-2xl bg-navy-900 text-white flex items-center justify-center">
@@ -101,20 +102,20 @@ export function AttendeeProfile() {
               Attendee
             </div>
           </div>
-        </section>
+        </MotionSection>
 
         {message && <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">{message}</div>}
         {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
 
-        <form onSubmit={handleSave} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-8">
+        <MotionForm onSubmit={handleSave} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-8" lift={false}>
           <div>
             <h2 className="text-xl font-bold text-navy-900">Kebutuhan aksesibilitas</h2>
             <p className="text-sm text-ink-500 mt-1">Data ini dipakai untuk menghitung match score dan snapshot saat mengirim permintaan.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MotionCardGrid className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {booleanKeys.map((key) => (
-              <label
+              <MotionCardLabel
                 key={key}
                 className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-bg p-4 cursor-pointer hover:border-navy-200"
               >
@@ -128,9 +129,9 @@ export function AttendeeProfile() {
                   onChange={() => handleToggle(key)}
                   className="size-5 accent-navy-900 shrink-0"
                 />
-              </label>
+              </MotionCardLabel>
             ))}
-          </div>
+          </MotionCardGrid>
 
           <div className="rounded-2xl border border-line bg-bg p-4">
             <label className="block text-sm font-bold text-navy-900 mb-3">{needLabels.walking_distance}</label>
@@ -147,12 +148,12 @@ export function AttendeeProfile() {
 
           <button
             disabled={saving}
-            className="w-full sm:w-fit rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2"
+            className="w-full sm:w-fit rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             Simpan profil
           </button>
-        </form>
+        </MotionForm>
       </div>
     </div>
   );

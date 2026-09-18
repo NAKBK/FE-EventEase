@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
 import { AttendeeProfile } from "@/components/attendee/AttendeeProfile";
 import { getErrorMessage } from "@/lib/api";
+import { MotionCard, MotionCardGrid } from "@/components/ui/motion-card";
 
 interface OrganizerProfile {
   id: string;
@@ -183,10 +184,10 @@ export default function ProfilePage() {
           </div>
 
           {/* Top Row: Profile Card & History */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
             {/* Left: Profile Card */}
-            <div className="col-span-1 bg-white rounded-3xl border border-line p-8 flex flex-col items-center justify-center shadow-sm">
+            <MotionCard className="col-span-1 bg-white rounded-3xl border border-line p-8 flex flex-col items-center justify-center shadow-sm hover:border-navy-200">
               <div className="relative mb-6">
                 <div className="size-24 rounded-full bg-navy-900 flex items-center justify-center text-white text-3xl font-bold shadow-md shadow-navy-900/20">
                   {profile?.name ? getInitials(profile.name) : "V"}
@@ -220,10 +221,10 @@ export default function ProfilePage() {
                   <span className="text-xs text-ink-500 font-medium">Rating</span>
                 </div>
               </div>
-            </div>
+            </MotionCard>
 
             {/* Right: History */}
-            <div className="col-span-1 lg:col-span-2 bg-white rounded-3xl border border-line p-8 shadow-sm">
+            <MotionCard className="col-span-1 lg:col-span-2 bg-white rounded-3xl border border-line p-8 shadow-sm hover:border-navy-200" lift={false}>
               <h2 className="text-xl font-bold text-navy-900 mb-1">History</h2>
               <p className="text-ink-500 text-sm font-medium mb-6">Aktivitas terbaru penyelenggara.</p>
 
@@ -265,12 +266,12 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-            </div>
+            </MotionCard>
 
-          </div>
+          </MotionCardGrid>
 
           {/* Bottom Row: How does it work (Horizontal Layout) */}
-          <div className="bg-white rounded-3xl border border-line p-8 shadow-sm mt-4">
+          <MotionCard className="bg-white rounded-3xl border border-line p-8 shadow-sm mt-4 hover:border-navy-200" lift={false}>
             <div className="mb-8">
               <h2 className="text-xl font-bold text-navy-900 mb-1">How does it work?</h2>
               <p className="text-ink-500 text-sm font-medium">Panduan singkat untuk penyelenggara baru.</p>
@@ -312,7 +313,7 @@ export default function ProfilePage() {
               </div>
 
             </div>
-          </div>
+          </MotionCard>
 
         </div>
       </div>

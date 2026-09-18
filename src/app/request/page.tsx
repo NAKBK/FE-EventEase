@@ -6,6 +6,7 @@ import { Calendar, Loader2, MapPin, Send } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { createRequest, EventListItem, getErrorMessage, listEvents } from "@/lib/api";
 import { formatDateTime, fromLocalInputValue, toLocalInputValue } from "@/lib/attendee-ui";
+import { MotionAside, MotionCardGrid, MotionForm } from "@/components/ui/motion-card";
 
 export default function RequestPage() {
   const router = useRouter();
@@ -93,8 +94,8 @@ export default function RequestPage() {
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.75fr] gap-6">
-              <form onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-5">
+            <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[1fr_0.75fr] gap-6">
+              <MotionForm onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-5 hover:border-navy-200" lift={false}>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-bold text-navy-900">Pilih event</label>
                   <select
@@ -143,14 +144,14 @@ export default function RequestPage() {
 
                 <button
                   disabled={submitting || !eventId}
-                  className="rounded-xl bg-navy-900 px-5 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2"
+                  className="rounded-xl bg-navy-900 px-5 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
                 >
                   {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                   Kirim permintaan
                 </button>
-              </form>
+              </MotionForm>
 
-              <aside className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-fit">
+              <MotionAside className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-fit hover:border-navy-200">
                 <h2 className="text-lg font-bold text-navy-900 mb-4">Ringkasan event</h2>
                 {selectedEvent ? (
                   <div className="space-y-4">
@@ -171,8 +172,8 @@ export default function RequestPage() {
                 ) : (
                   <p className="text-sm text-ink-500">Belum ada event upcoming tersedia.</p>
                 )}
-              </aside>
-            </div>
+              </MotionAside>
+            </MotionCardGrid>
           )}
         </div>
       </div>

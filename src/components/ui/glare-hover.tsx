@@ -1,12 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { HTMLMotionProps, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { MotionCard } from "@/components/ui/motion-card";
 
-interface GlareHoverProps extends React.HTMLAttributes<HTMLDivElement> {
+type GlareHoverProps = Omit<HTMLMotionProps<"div">, "children"> & {
+  children?: React.ReactNode;
   duration?: number;
-}
+};
 
 export function GlareHover({
   children,
@@ -14,7 +16,6 @@ export function GlareHover({
   duration = 600,
   ...props
 }: GlareHoverProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -28,11 +29,9 @@ export function GlareHover({
   };
 
   return (
-    <div
+    <MotionCard
       ref={containerRef}
       className={cn("relative overflow-hidden group", className)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       onMouseMove={handleMouseMove}
       {...props}
     >
@@ -44,6 +43,6 @@ export function GlareHover({
           transitionDuration: `${duration}ms`,
         }}
       />
-    </div>
+    </MotionCard>
   );
 }

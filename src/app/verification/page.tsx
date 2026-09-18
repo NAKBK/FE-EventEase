@@ -6,6 +6,7 @@ import { CheckCircle2, ClipboardCheck, Loader2, Send } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { AccessibilityRequest, getErrorMessage, listRequests, NeedProfile, submitVerification, VerificationValue } from "@/lib/api";
 import { formatDateTime, needLabels, verificationLabel } from "@/lib/attendee-ui";
+import { MotionAside, MotionCardButton, MotionCardGrid, MotionForm } from "@/components/ui/motion-card";
 
 const initialAttributes: Record<keyof NeedProfile, VerificationValue> = {
   step_free_entrance: "fulfilled",
@@ -99,12 +100,12 @@ export default function VerificationPage() {
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
           ) : requests.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6">
-              <aside className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-fit">
+            <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6">
+              <MotionAside className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-fit" lift={false}>
                 <h2 className="text-lg font-bold text-navy-900 mb-4">Request siap diverifikasi</h2>
                 <div className="space-y-3">
                   {requests.map((request) => (
-                    <button
+                    <MotionCardButton
                       key={request.id}
                       type="button"
                       onClick={() => setRequestId(request.id)}
@@ -114,12 +115,12 @@ export default function VerificationPage() {
                     >
                       <p className="text-sm font-bold text-navy-900">{request.event_title}</p>
                       <p className="text-xs text-ink-500 mt-1">{formatDateTime(request.arrival_estimate)}</p>
-                    </button>
+                    </MotionCardButton>
                   ))}
                 </div>
-              </aside>
+              </MotionAside>
 
-              <form onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-6">
+              <MotionForm onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-6" lift={false}>
                 <div className="flex items-start gap-4">
                   <div className="size-12 rounded-2xl bg-navy-50 flex items-center justify-center shrink-0">
                     <ClipboardCheck className="size-6 text-navy-700" />
@@ -151,13 +152,13 @@ export default function VerificationPage() {
 
                 <button
                   disabled={submitting || !requestId}
-                  className="rounded-xl bg-navy-900 px-5 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2"
+                  className="rounded-xl bg-navy-900 px-5 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
                 >
                   {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                   Kirim verifikasi
                 </button>
-              </form>
-            </div>
+              </MotionForm>
+            </MotionCardGrid>
           ) : (
             <div className="bg-white border border-line rounded-2xl p-12 text-center">
               <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />
