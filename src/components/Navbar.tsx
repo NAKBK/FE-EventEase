@@ -37,7 +37,7 @@ export const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-bg/80 backdrop-blur-md border-b border-line">
       {/* Left side: Logo */}
       <div className="flex items-center gap-2">
-        <Link href="/" className="font-serif text-3xl font-medium tracking-tight flex items-center gap-2">
+        <Link href={role === "organizer" ? "/dashboard" : "/"} className="font-serif text-3xl font-medium tracking-tight flex items-center gap-2">
           <img src="/logo.png" alt="EventEase Logo" className="w-8 h-8 object-contain" />
           <div>
             <span className="text-navy-900">Event</span>
