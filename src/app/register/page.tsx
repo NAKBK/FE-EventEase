@@ -42,8 +42,9 @@ export default function RegisterPage() {
       if (data.token) {
         localStorage.setItem("token", data.token);
       }
-      if (data.user?.role) {
-        localStorage.setItem("role", data.user.role);
+      if (data.user) {
+        if (data.user.role) localStorage.setItem("role", data.user.role);
+        if (data.user.id) localStorage.setItem("user_id", data.user.id);
       }
 
       // Redirect to home
