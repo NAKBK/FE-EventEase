@@ -21,7 +21,7 @@ export const Navbar = () => {
   const handleLogout = () => {
     clearSession();
     setRole(null);
-    router.push("/");
+    router.push("/login");
   };
 
   // Prevent hydration mismatch by returning empty div structure before mount
