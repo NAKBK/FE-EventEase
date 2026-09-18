@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Calendar, MapPin, Loader2, X, UploadCloud, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
 import Link from "next/link";
@@ -32,6 +33,7 @@ export default function EventManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("all");
+  const [page, setPage] = useState(1);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -90,7 +92,9 @@ export default function EventManagementPage() {
     }
 
     try {
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/api/events?mine=true`;
+      const limit = 5;
+      const offset = (page - 1) * limit;
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/api/events?mine=true&limit=${limit}&offset=${offset}`;
       if (filter !== "all") {
         url += `&status=${filter}`;
       }
@@ -114,7 +118,7 @@ export default function EventManagementPage() {
 
   useEffect(() => {
     fetchEvents();
-  }, [router, filter]);
+  }, [router, filter, page]);
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,7 +293,7 @@ export default function EventManagementPage() {
             
             <div className="relative z-10 flex-1">
               <h2 className="font-serif text-4xl text-white mb-2 tracking-tight">
-                Register New <span className="italic font-light">Event.</span>
+                Register <span className="italic font-light">Acara</span> baru
               </h2>
               <p className="text-gold-500 text-sm font-medium max-w-md">
                 Gratis selamanya untuk fitur dasar. Upgrade kapan saja kamu butuh lebih.
@@ -308,19 +312,25 @@ export default function EventManagementPage() {
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-2 p-1.5 bg-ink-100/50 rounded-xl w-fit">
-            {(["all", "upcoming", "completed"] as const).map((f) => (
+          <div className="relative flex p-1.5 bg-ink-50 border border-line rounded-xl w-fit">
+            {[{ id: "all", label: "Semua" }, { id: "upcoming", label: "Upcoming" }, { id: "completed", label: "Selesai" }].map((option) => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
+                key={option.id}
+                type="button"
+                onClick={() => { setFilter(option.id as "all"|"upcoming"|"completed"); setPage(1); }}
                 className={cn(
-                  "px-5 py-2.5 rounded-lg text-sm font-bold transition-all",
-                  filter === f
-                    ? "bg-white text-navy-900 shadow-sm"
-                    : "text-ink-500 hover:text-navy-900 hover:bg-white/50"
+                  "relative px-6 py-2 text-sm font-bold z-10 transition-colors text-center",
+                  filter === option.id ? "text-navy-900" : "text-ink-400 hover:text-navy-700"
                 )}
               >
-                {f === "all" ? "Semua" : f === "upcoming" ? "Upcoming" : "Selesai"}
+                {option.label}
+                {filter === option.id && (
+                  <motion.div
+                    layoutId="filter-pill"
+                    className="absolute inset-0 bg-white rounded-lg shadow-sm border border-line/50 -z-10"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
               </button>
             ))}
           </div>
@@ -336,19 +346,8 @@ export default function EventManagementPage() {
             ) : events?.items && events.items.length > 0 ? (
               <div className="flex flex-col gap-4">
                 {events.items.map((evt) => (
-                  <div key={evt.id} className="bg-white rounded-2xl border border-line p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-navy-200 hover:shadow-md">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={cn(
-                          "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                          evt.status === "upcoming" 
-                            ? "bg-green-100 text-green-700" 
-                            : "bg-gold-100 text-gold-700"
-                        )}>
-                          {getStatusLabel(evt.status)}
-                        </span>
-                        <span className="text-xs font-bold text-ink-400">{evt.id}</span>
-                      </div>
+                  <div key={evt.id} className="bg-white rounded-2xl border border-line p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-navy-200">
+                    <div className="relative z-10">
                       <h4 className="text-base font-bold text-navy-900 mb-2">{evt.title}</h4>
                       <div className="flex items-center gap-4 text-xs font-medium text-ink-500">
                         <div className="flex items-center gap-1.5">
@@ -361,12 +360,42 @@ export default function EventManagementPage() {
                         </div>
                       </div>
                     </div>
-                    
-                    <button className="w-full md:w-auto px-4 py-2 border border-line rounded-lg text-xs font-bold text-navy-900 hover:bg-ink-50 transition-colors">
-                      Kelola
-                    </button>
+                    <div className="relative z-10 shrink-0">
+                      <span className={cn(
+                        "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider block text-center",
+                        evt.status === "upcoming" 
+                          ? "bg-transparent border border-green-800 text-green-800" 
+                          : "bg-transparent border border-navy-900 text-navy-900"
+                      )}>
+                        {getStatusLabel(evt.status)}
+                      </span>
+                    </div>
                   </div>
                 ))}
+
+                {events.total > 5 && (
+                  <div className="flex items-center justify-center gap-4 pt-6 mt-2 border-t border-line">
+                    <button 
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="p-2 text-ink-500 hover:text-navy-900 disabled:opacity-30 disabled:hover:text-ink-500 transition-colors"
+                      aria-label="Sebelumnya"
+                    >
+                      &larr;
+                    </button>
+                    <span className="text-sm text-navy-900">
+                      <span className="font-bold">{page}</span> <span className="font-medium text-ink-500">dari</span> <span className="font-bold">{Math.ceil(events.total / 5)}</span>
+                    </span>
+                    <button 
+                      onClick={() => setPage(p => Math.min(Math.ceil(events.total / 5), p + 1))}
+                      disabled={page >= Math.ceil(events.total / 5)}
+                      className="p-2 text-ink-500 hover:text-navy-900 disabled:opacity-30 disabled:hover:text-ink-500 transition-colors"
+                      aria-label="Berikutnya"
+                    >
+                      &rarr;
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-line p-12 flex flex-col items-center justify-center text-center shadow-sm">
