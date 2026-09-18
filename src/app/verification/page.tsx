@@ -84,15 +84,15 @@ export default function VerificationPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
+      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-bg-soft">
         <div className="max-w-5xl mx-auto flex flex-col gap-8">
           <header>
             <h1 className="font-serif text-4xl text-navy-900 mb-2">Verifikasi Pengalaman</h1>
             <p className="text-sm text-ink-500">Bandingkan komitmen organizer dengan pengalaman aktual setelah event selesai.</p>
           </header>
 
-          {message && <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">{message}</div>}
-          {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
+          {message && <div className="rounded-xl border border-green-500/20 bg-green-50 px-4 py-3 text-sm font-semibold text-ink-700">{message}</div>}
+          {error && <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{error}</div>}
 
           {loading ? (
             <div className="py-16 flex justify-center">
@@ -109,7 +109,7 @@ export default function VerificationPage() {
                       type="button"
                       onClick={() => setRequestId(request.id)}
                       className={`w-full text-left rounded-2xl border p-4 transition-colors ${
-                        requestId === request.id ? "border-navy-900 bg-navy-50" : "border-line bg-white hover:bg-ink-50"
+                        requestId === request.id ? "border-navy-900 bg-navy-50" : "border-line bg-white hover:bg-bg-soft"
                       }`}
                     >
                       <p className="text-sm font-bold text-navy-900">{request.event_title}</p>

@@ -78,15 +78,15 @@ export default function RequestPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
+      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-bg-soft">
         <div className="max-w-4xl mx-auto flex flex-col gap-8">
           <header>
             <h1 className="font-serif text-4xl text-navy-900 mb-2">Permintaan Aksesibilitas</h1>
             <p className="text-sm text-ink-500">Kirim kebutuhan spesifik ke organizer untuk event yang ingin kamu hadiri.</p>
           </header>
 
-          {message && <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">{message}</div>}
-          {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
+          {message && <div className="rounded-xl border border-green-500/20 bg-green-50 px-4 py-3 text-sm font-semibold text-ink-700">{message}</div>}
+          {error && <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{error}</div>}
 
           {loading ? (
             <div className="py-16 flex justify-center">
@@ -138,7 +138,7 @@ export default function RequestPage() {
                     className="rounded-xl border border-line bg-bg px-4 py-3 text-sm resize-none focus:outline-none focus:border-navy-500"
                     required
                   />
-                  <p className="text-xs text-ink-400 text-right">{note.length}/500</p>
+                  <p className="text-xs text-ink-300 text-right">{note.length}/500</p>
                 </div>
 
                 <button
@@ -155,14 +155,14 @@ export default function RequestPage() {
                 {selectedEvent ? (
                   <div className="space-y-4">
                     <div>
-                      <p className="text-xs font-bold text-gold-600 uppercase mb-2">Upcoming</p>
+                      <p className="text-xs font-bold text-navy-700 uppercase mb-2">Upcoming</p>
                       <h3 className="text-xl font-bold text-navy-900">{selectedEvent.title}</h3>
                     </div>
-                    <div className="space-y-2 text-sm text-ink-600">
+                    <div className="space-y-2 text-sm text-ink-500">
                       <p className="flex items-center gap-2"><Calendar className="size-4" /> {formatDateTime(selectedEvent.starts_at)}</p>
                       <p className="flex items-center gap-2"><MapPin className="size-4" /> {selectedEvent.venue.name}, {selectedEvent.venue.city}</p>
                     </div>
-                    <div className="rounded-xl bg-ink-50 p-4">
+                    <div className="rounded-xl bg-bg-soft p-4">
                       <p className="text-xs font-bold text-ink-500 uppercase mb-1">Organizer</p>
                       <p className="text-sm font-bold text-navy-900">{selectedEvent.organizer.name}</p>
                       <p className="text-xs text-ink-500 mt-1">Reliability {selectedEvent.organizer.reliability_score ?? "-"} dari {selectedEvent.organizer.sample_count} sampel</p>

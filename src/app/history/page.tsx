@@ -69,7 +69,7 @@ export default function HistoryPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
+      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-bg-soft">
         <div className="max-w-5xl mx-auto flex flex-col gap-8">
           <header>
             <h1 className="font-serif text-4xl text-navy-900 mb-2">Riwayat Permintaan</h1>
@@ -83,7 +83,7 @@ export default function HistoryPage() {
                 onClick={() => setFilter(item)}
                 className={cn(
                   "px-4 py-2 rounded-xl text-sm font-bold border whitespace-nowrap",
-                  filter === item ? "bg-navy-900 text-white border-navy-900" : "bg-white text-ink-600 border-line hover:text-navy-900",
+                  filter === item ? "bg-navy-900 text-white border-navy-900" : "bg-white text-ink-500 border-line hover:text-navy-900",
                 )}
               >
                 {item === "all" ? "Semua" : statusLabel(item)}
@@ -91,8 +91,8 @@ export default function HistoryPage() {
             ))}
           </div>
 
-          {message && <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">{message}</div>}
-          {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
+          {message && <div className="rounded-xl border border-green-500/20 bg-green-50 px-4 py-3 text-sm font-semibold text-ink-700">{message}</div>}
+          {error && <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{error}</div>}
 
           {loading ? (
             <div className="py-16 flex justify-center">
@@ -131,7 +131,7 @@ export default function HistoryPage() {
                         <button
                           onClick={() => handleConfirm(request.id, false)}
                           disabled={actingId === request.id}
-                          className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-navy-900 hover:bg-ink-50 disabled:opacity-70"
+                          className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-navy-900 hover:bg-bg-soft disabled:opacity-70"
                         >
                           Tolak
                         </button>
@@ -140,17 +140,17 @@ export default function HistoryPage() {
                   </div>
 
                   <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="rounded-xl bg-ink-50 p-4">
+                    <div className="rounded-xl bg-bg-soft p-4">
                       <p className="text-xs font-bold text-ink-500 uppercase mb-2">Catatan kamu</p>
                       <p className="text-sm text-navy-900 leading-relaxed">{request.note || "-"}</p>
                     </div>
-                    <div className="rounded-xl bg-ink-50 p-4">
+                    <div className="rounded-xl bg-bg-soft p-4">
                       <p className="text-xs font-bold text-ink-500 uppercase mb-2">Respons organizer</p>
                       {request.response ? (
                         <div>
                           <p className="text-sm font-bold text-navy-900">{request.response.decision.replaceAll("_", " ")}</p>
-                          <p className="text-sm text-ink-600 mt-1">{request.response.note}</p>
-                          <p className="text-xs text-ink-400 mt-2">{formatDateTime(request.response.responded_at)}</p>
+                          <p className="text-sm text-ink-500 mt-1">{request.response.note}</p>
+                          <p className="text-xs text-ink-300 mt-2">{formatDateTime(request.response.responded_at)}</p>
                         </div>
                       ) : (
                         <p className="text-sm text-ink-500">Belum ada respons.</p>

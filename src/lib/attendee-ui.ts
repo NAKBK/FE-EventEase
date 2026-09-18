@@ -73,18 +73,73 @@ export function claimLabel(value: Claim[keyof Claim]) {
 }
 
 export function claimTone(value: Claim[keyof Claim]) {
-  if (value === 1) return "bg-green-50 text-green-700";
-  if (value === 0.5) return "bg-gold-50 text-gold-700";
-  if (value === 0) return "bg-red-50 text-red-700";
-  return "bg-ink-100 text-ink-600";
+  if (value === 1) return "bg-green-50 text-ink-700";
+  if (value === 0.5) return "bg-amber-50 text-ink-700";
+  if (value === 0) return "bg-red-50 text-ink-700";
+  return "bg-bg-soft text-ink-500";
 }
 
 export function requestTone(status: RequestStatus) {
-  if (status === "pending") return "bg-gold-50 text-gold-700";
+  if (status === "pending") return "bg-amber-50 text-ink-700";
   if (status === "responded") return "bg-navy-50 text-navy-700";
-  if (status === "confirmed") return "bg-green-50 text-green-700";
-  if (status === "verified") return "bg-emerald-50 text-emerald-700";
-  return "bg-ink-100 text-ink-600";
+  if (status === "confirmed" || status === "verified") return "bg-green-50 text-ink-700";
+  return "bg-bg-soft text-ink-500";
+}
+
+export function decisionLabel(decision: string) {
+  const labels: Record<string, string> = {
+    can_fulfill: "Dapat dipenuhi",
+    partially_fulfill: "Sebagian dapat dipenuhi",
+    cannot_fulfill: "Tidak dapat dipenuhi",
+  };
+
+  return labels[decision] || decision;
+}
+
+export function matchLabel(label: string) {
+  const labels: Record<string, string> = {
+    fulfilled: "Terpenuhi",
+    partially_fulfilled: "Sebagian",
+    not_fulfilled: "Tidak terpenuhi",
+    unknown: "Belum diketahui",
+  };
+
+  return labels[label] || label;
+}
+
+export function matchLabelTone(label: string) {
+  if (label === "fulfilled") return "bg-green-50 text-ink-700";
+  if (label === "partially_fulfilled") return "bg-amber-50 text-ink-700";
+  if (label === "not_fulfilled") return "bg-red-50 text-ink-700";
+  return "bg-bg-soft text-ink-500";
+}
+
+// Score tiers are a presentation aid only: the contract defines a 0-100 score
+// (provisional-v1 weights), not categories. Thresholds are an assumption.
+export interface MatchTier {
+  key: "high" | "medium" | "low" | "none";
+  label: string;
+  color: string;
+  tone: string;
+}
+
+export function matchTier(score: number | null | undefined): MatchTier {
+  if (score === null || score === undefined) {
+    return { key: "none", label: "Belum dihitung", color: "var(--ink-300)", tone: "bg-bg-soft text-ink-500" };
+  }
+  if (score >= 75) return { key: "high", label: "Cocok", color: "var(--green-500)", tone: "bg-green-50 text-ink-700" };
+  if (score >= 50) return { key: "medium", label: "Sebagian cocok", color: "var(--amber-500)", tone: "bg-amber-50 text-ink-700" };
+  return { key: "low", label: "Kurang cocok", color: "var(--red-500)", tone: "bg-red-50 text-ink-700" };
+}
+
+export function claimSourceLabel(source: string) {
+  const labels: Record<string, string> = {
+    organizer: "Klaim penyelenggara",
+    open_data: "Data terbuka",
+    demo: "Data demo",
+  };
+
+  return labels[source] || source;
 }
 
 export function toLocalInputValue(iso?: string | null) {

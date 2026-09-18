@@ -76,14 +76,14 @@ export function AttendeeProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-24 bg-ink-50 flex items-center justify-center">
+      <div className="min-h-screen pt-24 bg-bg-soft flex items-center justify-center">
         <Loader2 className="size-8 animate-spin text-navy-900" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
+    <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-bg-soft">
       <div className="max-w-5xl mx-auto flex flex-col gap-8">
         <section className="bg-white border border-line rounded-[2rem] p-8 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -96,15 +96,15 @@ export function AttendeeProfile() {
                 <p className="text-sm text-ink-500 mt-1">{name} · terakhir diperbarui {formatDateTime(updatedAt)}</p>
               </div>
             </div>
-            <div className="rounded-2xl bg-green-50 px-5 py-4 text-green-700 flex items-center gap-2 font-bold text-sm">
+            <div className="rounded-2xl bg-green-50 px-5 py-4 text-ink-700 flex items-center gap-2 font-bold text-sm">
               <CheckCircle2 className="size-5" />
               Attendee
             </div>
           </div>
         </section>
 
-        {message && <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">{message}</div>}
-        {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
+        {message && <div className="rounded-xl border border-green-500/20 bg-green-50 px-4 py-3 text-sm font-semibold text-ink-700">{message}</div>}
+        {error && <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{error}</div>}
 
         <form onSubmit={handleSave} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-8">
           <div>
@@ -116,7 +116,7 @@ export function AttendeeProfile() {
             {booleanKeys.map((key) => (
               <label
                 key={key}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-bg p-4 cursor-pointer hover:border-navy-200"
+                className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-bg p-4 cursor-pointer hover:border-navy-500"
               >
                 <span>
                   <span className="block text-sm font-bold text-navy-900">{needLabels[key]}</span>
