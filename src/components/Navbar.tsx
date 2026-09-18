@@ -93,9 +93,7 @@ export const Navbar = () => {
             <Link href="/event" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
               <TextRoll center className="text-sm font-extrabold uppercase">ACARA</TextRoll>
             </Link>
-            <Link href="/registration" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
-              <TextRoll center className="text-sm font-extrabold uppercase">PENDAFTARAN</TextRoll>
-            </Link>
+
             <Link href="/profile" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
               <TextRoll center className="text-sm font-extrabold uppercase">PROFIL</TextRoll>
             </Link>
