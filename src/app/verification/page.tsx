@@ -3,10 +3,11 @@
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, ClipboardCheck, Loader2, Send } from "lucide-react";
+import { Check, CheckCircle2, ClipboardCheck, Loader2, Minus, Send, X } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import {
   AccessibilityRequest,
+  Claim,
   getErrorMessage,
   getEvent,
   isApiError,
@@ -15,7 +16,7 @@ import {
   submitVerification,
   VerificationValue,
 } from "@/lib/api";
-import { formatDateTime, needLabels, verificationLabel } from "@/lib/attendee-ui";
+import { claimLabel, formatDateTime, needLabels, verificationLabel, walkingLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
 import { MotionAside, MotionCardButton, MotionCardGrid, MotionForm } from "@/components/ui/motion-card";
 
@@ -33,11 +34,16 @@ const attributeKeys = [
 
 const emptyAnswers = Object.fromEntries(attributeKeys.map((key) => [key, ""])) as Record<keyof NeedProfile, Choice>;
 
-const options: VerificationValue[] = ["fulfilled", "partially_fulfilled", "not_fulfilled"];
+const options: Array<{ value: VerificationValue; short: string; icon: typeof Check }> = [
+  { value: "fulfilled", short: "Terpenuhi", icon: Check },
+  { value: "partially_fulfilled", short: "Sebagian", icon: Minus },
+  { value: "not_fulfilled", short: "Tidak", icon: X },
+];
 
 interface VerifiableRequest extends AccessibilityRequest {
   eventStatus: "upcoming" | "completed" | "unknown";
   eventEndsAt: string | null;
+  claim: Claim | null;
 }
 
 function verificationErrorMessage(err: unknown) {
@@ -46,6 +52,13 @@ function verificationErrorMessage(err: unknown) {
   if (isApiError(err, "INVALID_REQUEST_STATE")) return "Status permintaan ini tidak memungkinkan verifikasi.";
   if (isApiError(err, "VALIDATION_ERROR")) return "Semua tujuh atribut harus diisi sebelum dikirim.";
   return getErrorMessage(err, "Gagal mengirim verifikasi.");
+}
+
+// What the organizer claimed for this attribute, shown next to the answer so the comparison is direct.
+function claimText(claim: Claim | null, key: keyof NeedProfile) {
+  if (!claim) return "Tidak tersedia";
+  if (key === "walking_distance") return claim.walking_distance_m !== null ? `${claim.walking_distance_m} m` : "Belum diketahui";
+  return claimLabel(claim[key]);
 }
 
 function VerificationContent() {
@@ -66,9 +79,9 @@ function VerificationContent() {
         data.items.map(async (request): Promise<VerifiableRequest> => {
           try {
             const event = await getEvent(request.event_id);
-            return { ...request, eventStatus: event.status, eventEndsAt: event.ends_at };
+            return { ...request, eventStatus: event.status, eventEndsAt: event.ends_at, claim: event.claim };
           } catch {
-            return { ...request, eventStatus: "unknown", eventEndsAt: null };
+            return { ...request, eventStatus: "unknown", eventEndsAt: null, claim: null };
           }
         }),
       );
@@ -105,7 +118,8 @@ function VerificationContent() {
   }, [loadRequests, router]);
 
   const selectedRequest = requests.find((request) => request.id === requestId);
-  const allAnswered = attributeKeys.every((key) => answers[key] !== "");
+  const answered = attributeKeys.filter((key) => answers[key] !== "").length;
+  const allAnswered = answered === attributeKeys.length;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,10 +148,10 @@ function VerificationContent() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-bg-soft">
-        <div className="max-w-5xl mx-auto flex flex-col gap-8">
+      <div className="min-h-screen pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+        <div className="max-w-5xl mx-auto flex flex-col gap-4">
           <header>
-            <h1 className="font-serif text-4xl text-navy-900 mb-2">Verifikasi Pengalaman</h1>
+            <h1 className="font-serif text-3xl text-navy-900 mb-1">Verifikasi Pengalaman</h1>
             <p className="text-sm text-ink-500">
               Verifikasi hanya untuk <strong>permintaan aksesibilitas yang kamu kirim</strong> dan sudah dikonfirmasi penyelenggara. Setelah
               event selesai, bandingkan komitmen mereka dengan pengalaman aslimu. Hasilnya membentuk skor keandalan penyelenggara.
@@ -145,9 +159,9 @@ function VerificationContent() {
           </header>
 
           {result && (
-            <div className="rounded-xl border border-green-500/20 bg-green-50 px-4 py-4 text-sm text-ink-700">
+            <div className="rounded-xl border border-green-500/20 bg-green-50 px-4 py-3 text-sm text-ink-700">
               <p className="font-bold">Verifikasi terkirim. Terima kasih.</p>
-              <p className="mt-1">
+              <p className="mt-0.5">
                 {result.score !== null
                   ? `Indikator penyelenggara sekarang ${result.score} dari ${result.sampleCount} verifikasi.`
                   : "Penyelenggara belum memiliki cukup verifikasi untuk skor."}{" "}
@@ -164,10 +178,10 @@ function VerificationContent() {
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
           ) : requests.length > 0 ? (
-            <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6">
-              <MotionAside className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-fit" lift={false}>
-                <h2 className="text-lg font-bold text-navy-900 mb-4">Dari permintaanmu</h2>
-                <div className="space-y-3">
+            <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[0.75fr_1.25fr] gap-4 items-start">
+              <MotionAside className="bg-white border border-line rounded-[2rem] p-5 shadow-sm" lift={false}>
+                <h2 className="text-base font-bold text-navy-900 mb-3">Dari permintaanmu</h2>
+                <div className="space-y-2">
                   {requests.map((request) => {
                     const ready = request.eventStatus === "completed";
                     return (
@@ -180,15 +194,15 @@ function VerificationContent() {
                           setError("");
                         }}
                         className={cn(
-                          "w-full text-left rounded-2xl border p-4 transition-colors",
+                          "w-full text-left rounded-2xl border p-3 transition-colors",
                           requestId === request.id ? "border-navy-900 bg-navy-50" : "border-line bg-white",
                           ready ? "hover:bg-bg-soft" : "opacity-60 cursor-not-allowed",
                         )}
                       >
                         <p className="text-sm font-bold text-navy-900">{request.event_title}</p>
-                        <p className="text-xs text-ink-500 mt-1">
+                        <p className="text-xs text-ink-500 mt-0.5">
                           {ready
-                            ? `Permintaan dikonfirmasi · event selesai ${formatDateTime(request.eventEndsAt)}`
+                            ? `Event selesai ${formatDateTime(request.eventEndsAt)}`
                             : request.eventStatus === "upcoming"
                               ? "Event belum selesai. Verifikasi tersedia setelah event berakhir."
                               : "Status event tidak dapat dimuat."}
@@ -200,68 +214,93 @@ function VerificationContent() {
               </MotionAside>
 
               {selectedRequest ? (
-                <MotionForm onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-6" lift={false}>
-                  <div className="flex items-start gap-4">
-                    <div className="size-12 rounded-2xl bg-navy-50 flex items-center justify-center shrink-0">
-                      <ClipboardCheck className="size-6 text-navy-700" />
+                <MotionForm onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-5 sm:p-6 shadow-sm flex flex-col gap-4" lift={false}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="size-10 rounded-xl bg-navy-50 flex items-center justify-center shrink-0">
+                        <ClipboardCheck className="size-5 text-navy-700" />
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="text-lg font-bold text-navy-900 leading-tight">{selectedRequest.event_title}</h2>
+                        <p className="text-xs text-ink-500 mt-0.5">Pilih kondisi aktual yang kamu alami untuk tiap atribut.</p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-navy-900">{selectedRequest.event_title}</h2>
-                      <p className="text-sm text-ink-500 mt-1">Pilih kondisi aktual untuk tujuh atribut aksesibilitas.</p>
-                    </div>
+                    <span className="shrink-0 rounded-full bg-bg-soft px-3 py-1 text-xs font-bold text-ink-700">
+                      {answered}/{attributeKeys.length} terisi
+                    </span>
                   </div>
 
                   {selectedRequest.response && (
                     <div className="rounded-xl bg-bg-soft px-4 py-3 text-sm text-ink-700">
-                      <p className="text-xs font-bold text-ink-500 uppercase mb-1">Komitmen penyelenggara</p>
+                      <p className="text-[11px] font-bold text-ink-500 uppercase mb-0.5">Komitmen penyelenggara</p>
                       {selectedRequest.response.note}
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {attributeKeys.map((key) => (
-                      <div key={key} className="rounded-2xl border border-line bg-bg p-4">
-                        <label htmlFor={`v-${key}`} className="block text-sm font-bold text-navy-900 mb-3">
-                          {needLabels[key]}
-                        </label>
-                        <select
-                          id={`v-${key}`}
-                          value={answers[key]}
-                          onChange={(e) => setAnswers((current) => ({ ...current, [key]: e.target.value as Choice }))}
-                          className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-navy-900 focus:outline-none focus:border-navy-500"
-                          required
-                        >
-                          <option value="" disabled>
-                            Pilih kondisi
-                          </option>
-                          {options.map((option) => (
-                            <option key={option} value={option}>
-                              {verificationLabel(option)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 auto-rows-fr">
+                    {attributeKeys.map((key) => {
+                      const needed =
+                        key === "walking_distance"
+                          ? `Toleransi: ${walkingLabel(selectedRequest.needs_snapshot.walking_distance)}`
+                          : selectedRequest.needs_snapshot[key] === true
+                            ? "Kamu perlukan"
+                            : "Tidak wajib";
+                      return (
+                        <fieldset key={key} className="rounded-2xl border border-line bg-bg p-3 flex flex-col gap-2 h-full">
+                          <legend className="sr-only">{needLabels[key]}</legend>
+                          <div>
+                            <p className="text-sm font-bold text-navy-900">{needLabels[key]}</p>
+                            <p className="text-xs text-ink-500">
+                              {needed} · klaim penyelenggara: <strong className="text-ink-700">{claimText(selectedRequest.claim, key)}</strong>
+                            </p>
+                          </div>
+                          <div className="mt-auto grid grid-cols-3 gap-1.5">
+                            {options.map((option) => {
+                              const Icon = option.icon;
+                              return (
+                                <label key={option.value} className="cursor-pointer" title={verificationLabel(option.value)}>
+                                  <input
+                                    type="radio"
+                                    name={`v-${key}`}
+                                    value={option.value}
+                                    checked={answers[key] === option.value}
+                                    onChange={() => setAnswers((current) => ({ ...current, [key]: option.value }))}
+                                    className="peer sr-only"
+                                  />
+                                  <span className="flex items-center justify-center gap-1 rounded-lg border border-line bg-white px-2 py-1.5 text-xs font-bold text-ink-700 hover:bg-bg-soft peer-checked:border-navy-900 peer-checked:bg-navy-900 peer-checked:text-white peer-checked:hover:bg-navy-900 peer-focus-visible:ring-2 peer-focus-visible:ring-navy-500">
+                                    <Icon className="size-3.5" />
+                                    {option.short}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </fieldset>
+                      );
+                    })}
                   </div>
 
-                  <button
-                    disabled={submitting || !allAnswered}
-                    className="rounded-xl bg-navy-900 px-5 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
-                  >
-                    {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                    Kirim verifikasi
-                  </button>
+                  <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 border-t border-line pt-3">
+                    <p className="text-xs text-ink-500">Verifikasi hanya bisa dikirim sekali per permintaan.</p>
+                    <button
+                      disabled={submitting || !allAnswered}
+                      className="rounded-xl bg-navy-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-60 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
+                    >
+                      {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                      Kirim verifikasi
+                    </button>
+                  </div>
                 </MotionForm>
               ) : (
                 <div className="bg-white border border-line rounded-[2rem] p-10 text-center shadow-sm h-fit">
                   <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />
                   <h2 className="font-bold text-navy-900">Belum ada event yang selesai</h2>
-                  <p className="text-sm text-ink-500 mt-1">Verifikasi bisa dikirim setelah event yang kamu ikuti berakhir.</p>
+                  <p className="text-sm text-ink-500 mt-1">Verifikasi bisa dikirim setelah event dari permintaanmu berakhir.</p>
                 </div>
               )}
             </MotionCardGrid>
           ) : (
-            <div className="bg-white border border-line rounded-2xl p-12 text-center">
+            <div className="bg-white border border-line rounded-2xl p-10 text-center">
               <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />
               <h2 className="font-bold text-navy-900">Belum ada permintaan yang bisa diverifikasi</h2>
               <p className="text-sm text-ink-500 mt-1 max-w-xl mx-auto">
