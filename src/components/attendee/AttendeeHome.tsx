@@ -268,11 +268,11 @@ export function AttendeeHome() {
           <div className="flex flex-col gap-3 border-t border-line px-4 py-4">
             <JourneyStepper current={-1} />
             <p className="text-xs text-ink-500 leading-relaxed">
-              EventEase membantu menilai <strong>kecocokan</strong> event dengan kebutuhanmu. Kamu tidak perlu menunggu konfirmasi untuk
-              datang: <strong>permintaan bersifat opsional</strong> dan gunanya untuk mendapat komitmen tertulis penyelenggara soal
-              dukungan aksesibilitas. Tiket atau pendaftaran mengikuti ketentuan penyelenggara, bukan EventEase. Setelah event selesai,
-              peserta yang punya komitmen terkonfirmasi bisa <strong>memverifikasi</strong> pengalamannya, dan hasilnya membentuk skor
-              keandalan penyelenggara.
+              Kamu dapat datang ke event kapan pun: EventEase tidak mengatur kehadiran atau tiket, yang itu mengikuti ketentuan
+              penyelenggara. EventEase membantu menilai <strong>kecocokan</strong> event dengan kebutuhanmu. Kalau kamu ingin kepastian
+              dukungan aksesibilitas, kirim <strong>permintaan</strong>. Setelah penyelenggara merespons dan kamu mengonfirmasi, kamu
+              punya komitmen tertulis. Begitu event selesai, <strong>permintaan itu bisa kamu verifikasi</strong>, dan hasilnya membentuk
+              skor keandalan penyelenggara.
             </p>
           </div>
         </details>

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, ClipboardCheck, Loader2, Send } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import {
@@ -48,8 +48,9 @@ function verificationErrorMessage(err: unknown) {
   return getErrorMessage(err, "Gagal mengirim verifikasi.");
 }
 
-export default function VerificationPage() {
+function VerificationContent() {
   const router = useRouter();
+  const preferredId = useSearchParams().get("request");
   const [requests, setRequests] = useState<VerifiableRequest[]>([]);
   const [requestId, setRequestId] = useState("");
   const [answers, setAnswers] = useState(emptyAnswers);
@@ -74,7 +75,9 @@ export default function VerificationPage() {
 
       setRequests(withStatus);
       setRequestId((current) => {
-        if (withStatus.some((item) => item.id === current && item.eventStatus === "completed")) return current;
+        const ready = (id: string | null) => withStatus.some((item) => item.id === id && item.eventStatus === "completed");
+        if (ready(current)) return current;
+        if (ready(preferredId)) return preferredId as string;
         return withStatus.find((item) => item.eventStatus === "completed")?.id ?? "";
       });
     } catch (err: unknown) {
@@ -82,7 +85,7 @@ export default function VerificationPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [preferredId]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -135,7 +138,10 @@ export default function VerificationPage() {
         <div className="max-w-5xl mx-auto flex flex-col gap-8">
           <header>
             <h1 className="font-serif text-4xl text-navy-900 mb-2">Verifikasi Pengalaman</h1>
-            <p className="text-sm text-ink-500">Bandingkan komitmen organizer dengan pengalaman aktual setelah event selesai.</p>
+            <p className="text-sm text-ink-500">
+              Verifikasi hanya untuk <strong>permintaan aksesibilitas yang kamu kirim</strong> dan sudah dikonfirmasi penyelenggara. Setelah
+              event selesai, bandingkan komitmen mereka dengan pengalaman aslimu. Hasilnya membentuk skor keandalan penyelenggara.
+            </p>
           </header>
 
           {result && (
@@ -160,7 +166,7 @@ export default function VerificationPage() {
           ) : requests.length > 0 ? (
             <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6">
               <MotionAside className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-fit" lift={false}>
-                <h2 className="text-lg font-bold text-navy-900 mb-4">Permintaan dikonfirmasi</h2>
+                <h2 className="text-lg font-bold text-navy-900 mb-4">Dari permintaanmu</h2>
                 <div className="space-y-3">
                   {requests.map((request) => {
                     const ready = request.eventStatus === "completed";
@@ -182,7 +188,7 @@ export default function VerificationPage() {
                         <p className="text-sm font-bold text-navy-900">{request.event_title}</p>
                         <p className="text-xs text-ink-500 mt-1">
                           {ready
-                            ? `Event selesai ${formatDateTime(request.eventEndsAt)}`
+                            ? `Permintaan dikonfirmasi · event selesai ${formatDateTime(request.eventEndsAt)}`
                             : request.eventStatus === "upcoming"
                               ? "Event belum selesai. Verifikasi tersedia setelah event berakhir."
                               : "Status event tidak dapat dimuat."}
@@ -257,17 +263,31 @@ export default function VerificationPage() {
           ) : (
             <div className="bg-white border border-line rounded-2xl p-12 text-center">
               <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />
-              <h2 className="font-bold text-navy-900">Belum ada request yang siap diverifikasi</h2>
-              <p className="text-sm text-ink-500 mt-1">
-                Request berstatus dikonfirmasi akan muncul di sini setelah organizer merespons dan kamu menerimanya.{" "}
-                <Link href="/history" className="underline text-navy-700">
-                  Lihat riwayat
-                </Link>
+              <h2 className="font-bold text-navy-900">Belum ada permintaan yang bisa diverifikasi</h2>
+              <p className="text-sm text-ink-500 mt-1 max-w-xl mx-auto">
+                Daftar ini berasal dari permintaan aksesibilitas yang kamu kirim, sudah direspons penyelenggara, dan sudah kamu
+                konfirmasi. Kirim permintaan dari halaman detail event, lalu kembali ke sini setelah event selesai.
               </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <Link href="/" className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-white hover:bg-navy-800">
+                  Cari event
+                </Link>
+                <Link href="/history" className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-bg-soft">
+                  Lihat riwayat permintaan
+                </Link>
+              </div>
             </div>
           )}
         </div>
       </div>
     </>
+  );
+}
+
+export default function VerificationPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerificationContent />
+    </Suspense>
   );
 }

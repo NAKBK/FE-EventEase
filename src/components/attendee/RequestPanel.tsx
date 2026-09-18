@@ -143,6 +143,10 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
   return (
     <div className="flex flex-col gap-4">
       <JourneyStepper current={journeyStep(stepStatus, profile !== null)} />
+      <p className="text-xs text-ink-500">
+        Kamu dapat datang kapan pun. Langkah 3 sampai 6 hanya untuk mendapat komitmen tertulis dukungan aksesibilitas dan
+        memverifikasinya setelah event.
+      </p>
 
       {loadError && (
         <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{loadError}</div>
@@ -233,30 +237,32 @@ export function RequestPanel({ event }: { event: PanelEvent }) {
             </div>
           )}
 
-          {active.status === "confirmed" && (
-            <p className="text-sm text-ink-700">
-              Komitmen tersimpan. Setelah event selesai, kirim{" "}
-              <Link href="/verification" className="font-bold text-navy-700 underline">
-                verifikasi pengalamanmu
-              </Link>
-              .
-            </p>
-          )}
+          {active.status === "confirmed" &&
+            (event.status === "completed" ? (
+              <div className="flex flex-col gap-2 rounded-xl border border-navy-500/30 bg-navy-50 px-4 py-3 text-sm text-ink-700 sm:flex-row sm:items-center sm:justify-between">
+                <p>
+                  <strong>Event sudah selesai.</strong> Bandingkan komitmen penyelenggara di atas dengan pengalaman aslimu.
+                </p>
+                <Link
+                  href={`/verification?request=${active.id}`}
+                  className="rounded-xl bg-navy-900 px-4 py-2 text-center text-sm font-bold text-white hover:bg-navy-800 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
+                >
+                  Verifikasi permintaan ini
+                </Link>
+              </div>
+            ) : (
+              <p className="text-sm text-ink-700">
+                Komitmen tersimpan. Setelah event berakhir ({formatDateTime(event.ends_at)}), permintaan ini bisa kamu verifikasi
+                langsung dari sini.
+              </p>
+            ))}
         </div>
       ) : event.status !== "upcoming" ? (
         <div className="flex items-start gap-3 rounded-xl bg-bg-soft px-4 py-3 text-sm text-ink-700">
           <Info className="size-4 text-ink-300 shrink-0 mt-0.5" />
           <p>
             Event ini sudah selesai, jadi permintaan baru tidak bisa dikirim.
-            {request?.status === "confirmed" && (
-              <>
-                {" "}
-                <Link href="/verification" className="font-bold text-navy-700 underline">
-                  Verifikasi pengalamanmu
-                </Link>
-                .
-              </>
-            )}
+            {request?.status === "verified" && <> Kamu sudah memverifikasi permintaanmu untuk event ini. Terima kasih.</>}
           </p>
         </div>
       ) : (

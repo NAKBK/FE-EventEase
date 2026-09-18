@@ -314,8 +314,9 @@ export default function EventDetailPage() {
               <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
                 <h2 className="text-lg font-bold text-navy-900">Ajukan permintaan aksesibilitas</h2>
                 <p className="text-xs text-ink-500 mt-0.5 mb-4">
-                  Opsional: kamu tidak perlu menunggu konfirmasi untuk datang. Permintaan gunanya mendapat komitmen tertulis penyelenggara
-                  soal dukungan aksesibilitas, yang bisa kamu verifikasi setelah event. Tiket atau pendaftaran mengikuti ketentuan penyelenggara.
+                  Kamu dapat datang kapan pun. Permintaan ini untuk mendapat komitmen tertulis penyelenggara soal dukungan aksesibilitas
+                  (misalnya drop-off atau ramp), dan setelah event selesai kamu bisa memverifikasinya di sini. Tiket atau pendaftaran
+                  mengikuti ketentuan penyelenggara.
                 </p>
                 <RequestPanel event={event} />
               </MotionSection>

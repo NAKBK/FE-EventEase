@@ -128,10 +128,10 @@ export default function HistoryPage() {
 
                     {request.status === "confirmed" && (
                       <Link
-                        href="/verification"
+                        href={`/verification?request=${request.id}`}
                         className="rounded-xl border border-line bg-white px-4 py-2.5 text-center text-sm font-bold text-navy-900 hover:bg-bg-soft"
                       >
-                        Verifikasi setelah event
+                        Verifikasi permintaan ini
                       </Link>
                     )}
 

@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 const steps = [
   "Isi profil kebutuhan",
   "Cek skor kecocokan",
-  "Ajukan permintaan (opsional)",
+  "Ajukan permintaan",
   "Penyelenggara merespons",
   "Kamu konfirmasi",
-  "Verifikasi setelah event",
+  "Verifikasi permintaan",
 ];
 
 // Index of the step the attendee is on. steps.length means every step is done.
