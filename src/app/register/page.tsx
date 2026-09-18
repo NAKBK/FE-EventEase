@@ -38,9 +38,12 @@ export default function RegisterPage() {
         throw new Error(data.error?.message || "Terjadi kesalahan saat pendaftaran");
       }
 
-      // Save token
+      // Save token and role
       if (data.token) {
         localStorage.setItem("token", data.token);
+      }
+      if (data.user?.role) {
+        localStorage.setItem("role", data.user.role);
       }
 
       // Redirect to home
