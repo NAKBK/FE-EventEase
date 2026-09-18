@@ -153,3 +153,6 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+.leaflet-container {
+  font-family: var(--font-sans);
+}
