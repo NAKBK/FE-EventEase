@@ -140,7 +140,7 @@ export default function Home() {
       </section>
 
       {/* Personalization Section */}
-      <section className="py-24 px-8 bg-bg-soft">
+      <section className="py-24 px-8 bg-bg-soft" id="aksesibilitas">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-serif text-[clamp(32px,4vw,48px)] text-navy-900 leading-tight mb-4">
             Pilih kebutuhan <em className="text-navy-600">aksesibilitasmu.</em>
