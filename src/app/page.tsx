@@ -12,6 +12,7 @@ import { AnimatedShinyText } from "@/components/ui/animated-shiny-text";
 import { GlareHover } from "@/components/ui/glare-hover";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { TypingAnimation } from "@/components/ui/typing-animation";
+import { CountUp } from "@/components/lightswind/count-up";
 import { MapPin, Target, Calendar, Accessibility, Activity, Heart, Baby, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -71,19 +72,19 @@ export default function Home() {
       <section className="bg-navy-900 text-white py-16 px-8">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x-0 md:divide-x divide-navy-800">
           <div className="flex flex-col gap-2 p-4">
-            <span className="font-serif text-5xl text-gold-500">12K+</span>
+            <CountUp value={12} suffix="K+" className="font-serif text-5xl text-gold-500 font-normal" colorScheme="custom" customColor="#F2C94C" />
             <span className="text-navy-100 text-sm font-semibold tracking-wider uppercase">Pengguna Aktif</span>
           </div>
           <div className="flex flex-col gap-2 p-4">
-            <span className="font-serif text-5xl text-gold-500">3.500+</span>
+            <CountUp value={3500} suffix="+" separator="." className="font-serif text-5xl text-gold-500 font-normal" colorScheme="custom" customColor="#F2C94C" />
             <span className="text-navy-100 text-sm font-semibold tracking-wider uppercase">Event Terdaftar</span>
           </div>
           <div className="flex flex-col gap-2 p-4">
-            <span className="font-serif text-5xl text-gold-500">98%</span>
+            <CountUp value={98} suffix="%" className="font-serif text-5xl text-gold-500 font-normal" colorScheme="custom" customColor="#F2C94C" />
             <span className="text-navy-100 text-sm font-semibold tracking-wider uppercase">Tingkat Kepuasan</span>
           </div>
           <div className="flex flex-col gap-2 p-4">
-            <span className="font-serif text-5xl text-gold-500">4,9</span>
+            <CountUp value={4.9} decimals={1} className="font-serif text-5xl text-gold-500 font-normal" colorScheme="custom" customColor="#F2C94C" />
             <span className="text-navy-100 text-sm font-semibold tracking-wider uppercase">Rating Rata-rata</span>
           </div>
         </div>
