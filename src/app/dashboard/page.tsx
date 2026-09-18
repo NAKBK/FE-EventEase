@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { GlowingCards, GlowingCard } from "@/components/lightswind/glowing-cards";
 import { CountUp } from "@/components/lightswind/count-up";
 import { ArrowUpRight, Minus, Activity, ShieldCheck, Accessibility, CheckCircle2, Loader2 } from "lucide-react";
-import { apiFetch, AccessibilityRequest } from "@/lib/api";
+import { apiFetch, AccessibilityRequest, respondToRequest } from "@/lib/api";
 
 const needLabels: Record<string, string> = {
   step_free_entrance: "Pintu Masuk Tanpa Tangga",
@@ -36,41 +36,71 @@ export default function OrganizerDashboard() {
   const [score, setScore] = useState<number | null>(null);
   const [recentRequests, setRecentRequests] = useState<AccessibilityRequest[]>([]);
 
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedReq, setSelectedReq] = useState<AccessibilityRequest | null>(null);
+  const [responseForm, setResponseForm] = useState({ decision: "can_fulfill", note: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const organizerId = localStorage.getItem("organizer_id") || "org-1";
+      const [
+        resPending,
+        resResponded,
+        resUpcoming,
+        resOrg,
+        resRecent
+      ] = await Promise.all([
+        apiFetch<{ total: number }>("/api/requests?status=pending"),
+        apiFetch<{ total: number }>("/api/requests?status=responded"),
+        apiFetch<{ total: number }>("/api/events?mine=true&status=upcoming"),
+        apiFetch<{ reliability?: { score: number | null } }>(`/api/organizers/${organizerId}`),
+        apiFetch<{ items: AccessibilityRequest[] }>("/api/requests?limit=2")
+      ]);
+
+      setBaruCount(resPending.total);
+      setProsesCount(resResponded.total);
+      setAktifCount(resUpcoming.total);
+      setScore(resOrg.reliability?.score ?? null);
+      setRecentRequests(resRecent.items);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const name = localStorage.getItem("name") || "Organizer";
-    const organizerId = localStorage.getItem("organizer_id") || "org-1";
     setUserName(name);
-
-    const fetchData = async () => {
-      try {
-        const [
-          resPending,
-          resResponded,
-          resUpcoming,
-          resOrg,
-          resRecent
-        ] = await Promise.all([
-          apiFetch<{ total: number }>("/api/requests?status=pending"),
-          apiFetch<{ total: number }>("/api/requests?status=responded"),
-          apiFetch<{ total: number }>("/api/events?mine=true&status=upcoming"),
-          apiFetch<{ reliability?: { score: number | null } }>(`/api/organizers/${organizerId}`),
-          apiFetch<{ items: AccessibilityRequest[] }>("/api/requests?limit=2")
-        ]);
-
-        setBaruCount(resPending.total);
-        setProsesCount(resResponded.total);
-        setAktifCount(resUpcoming.total);
-        setScore(resOrg.reliability?.score ?? null);
-        setRecentRequests(resRecent.items);
-      } catch (err) {
-        console.error("Failed to fetch dashboard data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const handleOpenModal = (req: AccessibilityRequest) => {
+    setSelectedReq(req);
+    setResponseForm({ decision: "can_fulfill", note: "" });
+    setSubmitError("");
+    setIsModalOpen(true);
+  };
+
+  const handleRespond = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedReq) return;
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      await respondToRequest(selectedReq.id, responseForm);
+      setIsModalOpen(false);
+      await fetchData();
+    } catch (err: any) {
+      setSubmitError(err.message || "Gagal mengirim respons.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <>
@@ -171,11 +201,11 @@ export default function OrganizerDashboard() {
                       recentRequests.map((req) => (
                         <div key={req.id} className={`p-4 border border-line rounded-lg flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:border-navy-200 transition-colors ${req.status !== 'pending' ? 'opacity-70' : ''}`}>
                           <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${req.status === 'pending' ? 'bg-gold-50' : 'bg-green-50'}`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${req.status === 'pending' ? 'bg-gold-50' : 'bg-transparent border border-green-800'}`}>
                               {req.status === 'pending' ? (
                                 <Accessibility className="w-5 h-5 text-gold-600" />
                               ) : (
-                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                <CheckCircle2 className="w-5 h-5 text-green-800" />
                               )}
                             </div>
                             <div>
@@ -184,14 +214,17 @@ export default function OrganizerDashboard() {
                             </div>
                           </div>
                           {req.status === 'pending' ? (
-                            <button className="group relative px-4 py-2 bg-white border border-navy-900 text-navy-900 rounded-lg text-xs font-bold w-full sm:w-auto overflow-hidden">
+                            <button 
+                              onClick={() => handleOpenModal(req)}
+                              className="group relative px-4 py-2 bg-white border border-navy-900 text-navy-900 rounded-lg text-xs font-bold w-full sm:w-auto overflow-hidden"
+                            >
                               <div className="absolute inset-0 bg-navy-900 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
                               <span className="relative z-10 flex items-center justify-center gap-1 group-hover:text-white transition-colors duration-300">
                                 Tanggapi <span className="opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300">&rarr;</span>
                               </span>
                             </button>
                           ) : (
-                            <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded-md text-[10px] font-bold uppercase tracking-wider sm:ml-auto">
+                            <span className="px-3 py-1.5 bg-transparent border border-green-800 text-green-800 rounded-md text-[10px] font-bold uppercase tracking-wider sm:ml-auto">
                               {req.status}
                             </span>
                           )}
@@ -206,6 +239,76 @@ export default function OrganizerDashboard() {
           )}
         </div>
       </div>
+
+      {/* Response Modal */}
+      {isModalOpen && selectedReq && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-navy-900/40 backdrop-blur-sm"
+            onClick={() => !isSubmitting && setIsModalOpen(false)}
+          ></div>
+          <div className="relative bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-serif text-2xl font-bold text-navy-900">Tanggapi Permintaan</h3>
+                <p className="text-sm text-ink-500 mt-1">Kebutuhan: {getFirstNeed(selectedReq.needs_snapshot)}</p>
+              </div>
+              <button 
+                onClick={() => !isSubmitting && setIsModalOpen(false)}
+                className="size-8 rounded-full bg-ink-50 flex items-center justify-center text-ink-500 hover:bg-red-50 hover:text-red-500 transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+
+            {submitError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">
+                {submitError}
+              </div>
+            )}
+
+            <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
+              <form id="responseForm" onSubmit={handleRespond} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-navy-900 block">Keputusan *</label>
+                  <select 
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm"
+                    value={responseForm.decision}
+                    onChange={(e) => setResponseForm(prev => ({ ...prev, decision: e.target.value }))}
+                  >
+                    <option value="can_fulfill">Bisa Dipenuhi (Can Fulfill)</option>
+                    <option value="partially_fulfill">Bisa Sebagian (Partially Fulfill)</option>
+                    <option value="cannot_fulfill">Tidak Bisa Dipenuhi (Cannot Fulfill)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-navy-900 block">Catatan untuk Pengguna *</label>
+                  <textarea 
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm min-h-[100px]"
+                    placeholder="Contoh: Kami bisa menyediakan akses tanpa tangga di pintu utara."
+                    value={responseForm.note}
+                    onChange={(e) => setResponseForm(prev => ({ ...prev, note: e.target.value }))}
+                  ></textarea>
+                </div>
+              </form>
+            </div>
+            
+            <div className="pt-6 mt-6 border-t border-line">
+              <button 
+                type="submit"
+                form="responseForm"
+                disabled={isSubmitting}
+                className="w-full h-12 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : "Kirim Respons"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
