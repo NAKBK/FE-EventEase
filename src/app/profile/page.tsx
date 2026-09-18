@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Edit, MapPin, CheckCircle2, FileText, Clock, Loader2 } from "lucide-react";
+import { MapPin, CheckCircle2, FileText, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
 
@@ -161,9 +161,6 @@ export default function ProfilePage() {
             </h1>
             <p className="text-ink-500 text-sm font-medium">Informasi publik dan riwayat aktivitas venue-mu.</p>
           </div>
-          <button className="flex items-center justify-center gap-2 border border-line bg-white px-5 py-2.5 rounded-xl text-sm font-bold text-navy-900 hover:bg-ink-50 transition-colors shadow-sm">
-            <Edit className="size-4" /> Edit Profil
-          </button>
         </div>
 
         {/* Top Row: Profile Card & History */}
