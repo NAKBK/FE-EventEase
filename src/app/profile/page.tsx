@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { MapPin, CheckCircle2, FileText, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
+import { AttendeeProfile } from "@/components/attendee/AttendeeProfile";
+import { getErrorMessage } from "@/lib/api";
 
 interface OrganizerProfile {
   id: string;
@@ -38,6 +40,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<OrganizerProfile | null>(null);
   const [events, setEvents] = useState<EventResponse | null>(null);
+  const [authRole, setAuthRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -45,10 +48,17 @@ export default function ProfilePage() {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
       const userId = localStorage.getItem("user_id");
+      const organizerId = localStorage.getItem("organizer_id");
       const role = localStorage.getItem("role");
+      setAuthRole(role);
 
       if (!token || !userId) {
         router.push("/login");
+        return;
+      }
+
+      if (role === "attendee") {
+        setLoading(false);
         return;
       }
 
@@ -62,7 +72,7 @@ export default function ProfilePage() {
         // Fetch Profile gracefully
         let profileData = null;
         try {
-          const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/organizers/${userId}`, {
+          const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/organizers/${organizerId || userId}`, {
             headers: {
               "Authorization": `Bearer ${token}`,
               "Accept": "application/json"
@@ -92,8 +102,8 @@ export default function ProfilePage() {
         const eventsData = await eventsRes.json();
         setEvents(eventsData);
 
-      } catch (err: any) {
-        setError(err.message || "Terjadi kesalahan sistem.");
+      } catch (err: unknown) {
+        setError(getErrorMessage(err, "Terjadi kesalahan sistem."));
       } finally {
         setLoading(false);
       }
@@ -101,6 +111,15 @@ export default function ProfilePage() {
 
     fetchData();
   }, [router]);
+
+  if (authRole === "attendee") {
+    return (
+      <>
+        <Navbar />
+        <AttendeeProfile />
+      </>
+    );
+  }
 
   if (loading) {
     return (

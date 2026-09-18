@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TextRoll } from "@/components/ui/skiper-ui/skiper58";
 import { MotionButton } from "@/components/ui/motion-button";
+import { clearSession } from "@/lib/api";
 
 export const Navbar = () => {
   const router = useRouter();
@@ -18,9 +19,7 @@ export const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("user_id");
+    clearSession();
     setRole(null);
     router.push("/");
   };

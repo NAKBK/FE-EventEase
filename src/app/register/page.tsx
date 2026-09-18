@@ -5,17 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { InteractiveGridPattern } from "@/components/ui/interactive-grid-pattern";
-import { ArrowLeft, Eye, EyeOff, Loader2, Home } from "lucide-react";
+import { Eye, EyeOff, Loader2, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { MotionButton } from "@/components/ui/motion-button";
+import { getErrorMessage, register, saveSession, type Role } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("attendee");
+  const [role, setRole] = useState<Role>("attendee");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,31 +27,13 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || "Terjadi kesalahan saat pendaftaran");
-      }
-
-      // Save token and role
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
-      if (data.user) {
-        if (data.user.role) localStorage.setItem("role", data.user.role);
-        if (data.user.id) localStorage.setItem("user_id", data.user.id);
-      }
+      const data = await register({ name, email, password, role });
+      saveSession(data);
 
       // Redirect to home
-      router.push("/");
-    } catch (err: any) {
-      setError(err.message || "Email sudah digunakan atau data tidak valid");
+      router.push(data.user.role === "organizer" ? "/dashboard" : "/");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Email sudah digunakan atau data tidak valid"));
     } finally {
       setLoading(false);
     }
@@ -131,7 +114,7 @@ export default function RegisterPage() {
                       <button
                         key={option.id}
                         type="button"
-                        onClick={() => setRole(option.id)}
+                        onClick={() => setRole(option.id as Role)}
                         className={cn(
                           "relative flex-1 py-3 text-sm font-medium z-10 transition-colors",
                           role === option.id ? "text-navy-900" : "text-ink-400 hover:text-navy-700"
