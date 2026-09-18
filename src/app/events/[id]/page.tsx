@@ -8,7 +8,6 @@ import {
   Calendar,
   Check,
   CircleHelp,
-  ImageOff,
   Info,
   Loader2,
   MapPin,
@@ -43,6 +42,7 @@ import {
 import { cn } from "@/lib/utils";
 import { MotionCard, MotionSection } from "@/components/ui/motion-card";
 import { RequestPanel } from "@/components/attendee/RequestPanel";
+import { PhotoCarousel } from "@/components/attendee/PhotoCarousel";
 import { PageBackdrop } from "@/components/attendee/PageBackdrop";
 
 const labelIcon = {
@@ -148,6 +148,12 @@ export default function EventDetailPage() {
             </div>
           ) : (
             <>
+              <PhotoCarousel
+                images={event.media.map((item) => ({ id: item.id, url: item.url }))}
+                title={event.title}
+                caption="Foto dari penyelenggara, bukan sertifikasi"
+              />
+
               <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-stretch">
                 <MotionSection className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-full" lift={false}>
                   <span className="inline-flex rounded-full bg-navy-50 px-3 py-1 text-xs font-bold text-navy-700 mb-2">
@@ -288,30 +294,6 @@ export default function EventDetailPage() {
                   <p className="text-xs text-ink-500 mt-2">Klaim ini bukan hasil audit independen. Konfirmasi lewat permintaan aksesibilitas.</p>
                 </MotionCard>
               </div>
-
-              <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
-                <h2 className="text-lg font-bold text-navy-900">Foto bukti klaim</h2>
-                <p className="text-xs text-ink-500 mt-0.5 mb-3">Foto dari penyelenggara sebagai bukti, bukan sertifikasi.</p>
-                {event.media.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {event.media.map((item, index) => (
-                      <a key={item.id} href={item.url} target="_blank" rel="noreferrer" aria-label={`Buka foto ${index + 1} ukuran penuh`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={item.url}
-                          alt={`Foto fasilitas ${event.title} ${index + 1}`}
-                          className="aspect-[4/3] w-full rounded-xl border border-line object-cover"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 rounded-xl bg-bg-soft px-4 py-4 text-sm text-ink-500">
-                    <ImageOff className="size-5 shrink-0 text-ink-300" />
-                    Penyelenggara belum mengunggah foto untuk event ini.
-                  </div>
-                )}
-              </MotionSection>
 
               <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
                 <h2 className="text-lg font-bold text-navy-900">Ajukan permintaan aksesibilitas</h2>
