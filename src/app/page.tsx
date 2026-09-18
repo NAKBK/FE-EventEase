@@ -31,22 +31,22 @@ export default function Home() {
         />
         <div className="absolute -top-24 -right-24 w-[500px] h-[400px] bg-navy-500/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
         <div className="absolute -bottom-24 -left-24 w-[500px] h-[400px] bg-navy-500/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
-        
+
         <h1 className="font-serif text-[clamp(40px,5vw,64px)] text-navy-900 leading-[1.1] tracking-tight max-w-4xl mx-auto mb-6 relative z-10">
           Temukan event <br className="hidden md:block" />
           <em className="text-navy-600">tanpa hambatan.</em>
         </h1>
-        <TypingAnimation 
+        <TypingAnimation
           className="text-ink-500 text-[clamp(14px,2vw,18px)] leading-relaxed max-w-2xl mx-auto mb-10 relative z-10 font-normal"
           duration={15}
         >
           EventEase membantu kamu menemukan konser, seminar, dan acara favorit. Lengkap dengan info aksesibilitas untuk pengguna dengan mobilitas terbatas.
         </TypingAnimation>
-        
+
         <div className="mb-10 relative z-10">
           {/* Replace src string array with an array of objects which TrustedUsers might expect depending on the implementation */}
           <div className="flex flex-col items-center gap-3">
-            <TrustedUsers 
+            <TrustedUsers
               className="mb-2"
               totalUsersText={8200}
               avatars={[
@@ -114,7 +114,7 @@ export default function Home() {
                   Temukan event berdasarkan genre, lokasi, tanggal, dan tingkat aksesibilitas venue.
                 </p>
               </GlowingCard>
-              
+
               <GlowingCard className="bg-bg-soft border border-line rounded-[var(--radius-xl)] p-8">
                 <div className="bg-white size-12 rounded-full flex items-center justify-center mb-6 shadow-sm border border-line">
                   <MapPin className="text-navy-700 size-6" />
@@ -124,7 +124,7 @@ export default function Home() {
                   Rute khusus untuk kursi roda, jalur landai, lift, dan toilet aksesibel di setiap venue.
                 </p>
               </GlowingCard>
-              
+
               <GlowingCard className="bg-bg-soft border border-line rounded-[var(--radius-xl)] p-8">
                 <div className="bg-white size-12 rounded-full flex items-center justify-center mb-6 shadow-sm border border-line">
                   <Calendar className="text-navy-700 size-6" />
@@ -240,7 +240,7 @@ export default function Home() {
             <DottedMap className="fill-white/30 h-[300px] w-full max-w-[500px]" />
           </div>
         </div>
-        
+
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-navy-800 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4 opacity-50"></div>
       </section>
@@ -259,7 +259,7 @@ export default function Home() {
             <p className="text-navy-100 mb-8 max-w-lg mx-auto">
               Gratis selamanya untuk fitur dasar. Upgrade kapan saja kamu butuh lebih.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <button className="bg-gold-500 hover:bg-gold-400 text-navy-900 font-bold py-3 px-8 rounded-full transition-colors shadow-lg shadow-gold-500/20">
                 Daftar Gratis
@@ -269,7 +269,7 @@ export default function Home() {
               </button>
             </div>
           </div>
-          
+
           <div className="absolute -top-24 -left-24 w-64 h-64 bg-navy-800 rounded-full blur-3xl opacity-50"></div>
           <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-navy-800 rounded-full blur-3xl opacity-50"></div>
         </div>
