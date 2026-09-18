@@ -91,15 +91,15 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-8 bg-bg" id="fitur">
-        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-12 items-center lg:items-start">
-          <div className="text-center lg:text-left lg:w-1/3 shrink-0 lg:sticky lg:top-32">
+      <section className="py-24 px-8 bg-bg relative" id="fitur">
+        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-12 relative">
+          <div className="text-center lg:text-left lg:w-1/3 shrink-0 flex flex-col justify-center">
             <h2 className="font-serif text-[clamp(32px,4vw,48px)] text-navy-900 leading-tight mb-4">
               Semua yang kamu butuhkan, <br />
               <em className="text-navy-600">dalam satu tempat.</em>
             </h2>
             <p className="text-ink-500 text-lg">
-              Dari pencarian event hingga navigasi aksesibel — kami rancang untuk semua orang.
+              Dari pencarian event hingga navigasi aksesibel, kami rancang untuk semua orang.
             </p>
           </div>
 
