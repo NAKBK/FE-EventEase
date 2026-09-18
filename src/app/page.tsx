@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { TestimonialSection } from "@/components/TestimonialSection";
@@ -15,8 +15,26 @@ import { TypingAnimation } from "@/components/ui/typing-animation";
 import { CountUp } from "@/components/lightswind/count-up";
 import { MapPin, Target, Calendar, Accessibility, Activity, Heart, Baby, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AttendeeHome } from "@/components/attendee/AttendeeHome";
 
 export default function Home() {
+  const [role, setRole] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setRole(localStorage.getItem("role"));
+    setIsMounted(true);
+  }, []);
+
+  if (isMounted && role === "attendee") {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <AttendeeHome />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen pt-20">
       <Navbar />
