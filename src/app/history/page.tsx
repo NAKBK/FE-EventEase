@@ -8,6 +8,7 @@ import { AccessibilityRequest, confirmRequest, getErrorMessage, isApiError, list
 import Link from "next/link";
 import { decisionLabel, formatDateTime, requestTone, statusLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
+import { MotionArticle, MotionCardGrid } from "@/components/ui/motion-card";
 
 const filters: Array<"all" | RequestStatus> = ["all", "pending", "responded", "confirmed", "closed", "verified"];
 
@@ -105,9 +106,9 @@ export default function HistoryPage() {
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
           ) : requests.length > 0 ? (
-            <div className="space-y-4">
+            <MotionCardGrid className="space-y-4">
               {requests.map((request) => (
-                <article key={request.id} className="bg-white border border-line rounded-2xl p-5 shadow-sm">
+                <MotionArticle key={request.id} className="bg-white border border-line rounded-2xl p-5 shadow-sm hover:border-navy-100">
                   <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                     <div className="flex gap-4">
                       <div className="size-11 rounded-xl bg-navy-50 flex items-center justify-center shrink-0">
@@ -139,14 +140,14 @@ export default function HistoryPage() {
                         <button
                           onClick={() => handleConfirm(request.id, true)}
                           disabled={actingId === request.id}
-                          className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70"
+                          className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
                         >
                           Terima
                         </button>
                         <button
                           onClick={() => handleConfirm(request.id, false)}
                           disabled={actingId === request.id}
-                          className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-navy-900 hover:bg-bg-soft disabled:opacity-70"
+                          className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-navy-900 hover:bg-bg-soft disabled:opacity-70 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
                         >
                           Tolak
                         </button>
@@ -172,9 +173,9 @@ export default function HistoryPage() {
                       )}
                     </div>
                   </div>
-                </article>
+                </MotionArticle>
               ))}
-            </div>
+            </MotionCardGrid>
           ) : (
             <div className="bg-white border border-line rounded-2xl p-12 text-center">
               <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />

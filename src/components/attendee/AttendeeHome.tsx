@@ -27,6 +27,7 @@ import {
 import { formatDateTime, matchTier, statusLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
 import type { MapEvent } from "@/components/attendee/EventMap";
+import { MotionArticle, MotionCard, MotionCardGrid, MotionSection } from "@/components/ui/motion-card";
 
 const EventMap = dynamic(() => import("@/components/attendee/EventMap"), {
   ssr: false,
@@ -171,8 +172,8 @@ export function AttendeeHome() {
   return (
     <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-bg-soft">
       <div className="max-w-6xl mx-auto flex flex-col gap-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_0.8fr] gap-6">
-          <section className="bg-navy-900 rounded-[2rem] p-8 text-white border border-navy-800 shadow-xl overflow-hidden relative">
+        <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[1.4fr_0.8fr] gap-6">
+          <MotionSection className="bg-navy-900 rounded-[2rem] p-8 text-white border border-navy-800 shadow-xl overflow-hidden relative">
             <div className="absolute -right-24 -top-24 size-72 bg-white/10 rounded-full blur-[80px]" />
             <div className="relative">
               <p className="text-gold-400 text-sm font-bold uppercase tracking-wider mb-3">Dashboard pengguna</p>
@@ -181,16 +182,16 @@ export function AttendeeHome() {
                 Semua rekomendasi membaca profil kebutuhanmu, klaim aksesibilitas venue, dan respons penyelenggara.
               </p>
             </div>
-          </section>
+          </MotionSection>
 
           <section className="grid grid-cols-2 gap-4">
-            <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-              <Clock className="size-5 text-gold-500 mb-4" />
+            <MotionCard className="bg-white border border-line rounded-2xl p-5 shadow-sm hover:border-navy-100">
+              <Clock className="size-5 text-gold-500 mb-4 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover/ee-card:-translate-y-0.5 motion-safe:group-hover/ee-card:scale-105" />
               <p className="text-3xl font-bold text-navy-900">{pendingCount}</p>
               <p className="text-xs font-bold text-ink-500 uppercase mt-1">Permintaan pending</p>
-            </div>
-            <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-              <ShieldCheck className="size-5 text-green-500 mb-4" />
+            </MotionCard>
+            <MotionCard className="bg-white border border-line rounded-2xl p-5 shadow-sm hover:border-navy-100">
+              <ShieldCheck className="size-5 text-green-500 mb-4 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover/ee-card:-translate-y-0.5 motion-safe:group-hover/ee-card:scale-105" />
               {activeEvent ? (
                 <Link href={`/events/${activeEvent.id}`} className="block">
                   <p className="text-base font-bold text-navy-900 line-clamp-2 min-h-12 hover:underline">{activeEvent.title}</p>
@@ -201,9 +202,9 @@ export function AttendeeHome() {
               <p className="text-xs font-bold text-ink-500 uppercase mt-1">
                 Event aktif{activeEvent ? ` · skor ${activeEvent.score}` : ""}
               </p>
-            </div>
+            </MotionCard>
           </section>
-        </div>
+        </MotionCardGrid>
 
         {error && (
           <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">
@@ -302,11 +303,11 @@ export function AttendeeHome() {
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
           ) : events.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <MotionCardGrid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {events.map((event) => {
                 const tier = matchTier(event.match?.score);
                 return (
-                  <article
+                  <MotionArticle
                     key={event.id}
                     id={`event-${event.id}`}
                     onMouseEnter={() => setHighlightedId(event.id)}
@@ -321,7 +322,7 @@ export function AttendeeHome() {
                         <p className="text-xs font-bold text-navy-700 uppercase mb-2">{statusLabel(event.status)}</p>
                         <h3 className="text-lg font-bold text-navy-900 leading-snug">{event.title}</h3>
                       </div>
-                      <div className={cn("size-14 rounded-2xl flex flex-col items-center justify-center shrink-0", tier.tone)}>
+                      <div className={cn("size-14 rounded-2xl flex flex-col items-center justify-center shrink-0 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover/ee-card:scale-105", tier.tone)}>
                         <span className="text-lg font-bold text-navy-900">{event.match?.score ?? "-"}</span>
                         <span className="text-[10px] font-bold text-ink-500">MATCH</span>
                       </div>
@@ -347,14 +348,14 @@ export function AttendeeHome() {
 
                     <Link
                       href={`/events/${event.id}`}
-                      className="mt-auto w-full rounded-xl bg-navy-900 px-4 py-3 text-center text-sm font-bold text-white hover:bg-navy-800"
+                      className="mt-auto w-full rounded-xl bg-navy-900 px-4 py-3 text-center text-sm font-bold text-white hover:bg-navy-800 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
                     >
                       Lihat detail & ajukan bantuan
                     </Link>
-                  </article>
+                  </MotionArticle>
                 );
               })}
-            </div>
+            </MotionCardGrid>
           ) : (
             <div className="bg-white rounded-2xl border border-line p-12 text-center">
               <Accessibility className="size-10 text-ink-300 mx-auto mb-3" />

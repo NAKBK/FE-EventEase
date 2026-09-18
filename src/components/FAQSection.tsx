@@ -7,6 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/cnippet-collapsible";
+import { MotionCard, MotionCardGrid } from "@/components/ui/motion-card";
 
 const faqs = [
   {
@@ -41,9 +42,9 @@ export function FAQSection() {
           </h2>
         </div>
         
-        <div className="flex flex-col gap-4">
+        <MotionCardGrid className="flex flex-col gap-4">
           {faqs.map((faq, idx) => (
-            <div key={idx} className="rounded-md border-[0.5px] border-navy-200/50 bg-bg px-6 py-5 text-ink-900 shadow-sm transition-all hover:border-navy-300 hover:shadow-md">
+            <MotionCard key={idx} className="rounded-md border-[0.5px] border-navy-200/50 bg-bg px-6 py-5 text-ink-900 shadow-sm hover:border-navy-300" lift={false}>
               <Collapsible>
                 <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-4 text-left group [&[aria-expanded=true]_.chevron]:opacity-0 [&[aria-expanded=true]_.chevron]:scale-50 [&[aria-expanded=true]_.chevron]:rotate-180 [&[aria-expanded=true]_.xicon]:opacity-100 [&[aria-expanded=true]_.xicon]:scale-100 [&[aria-expanded=true]_.xicon]:rotate-0">
                   <span className="font-bold text-lg text-navy-900 group-hover:text-navy-600 transition-colors">{faq.question}</span>
@@ -64,9 +65,9 @@ export function FAQSection() {
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-            </div>
+            </MotionCard>
           ))}
-        </div>
+        </MotionCardGrid>
       </div>
     </section>
   );

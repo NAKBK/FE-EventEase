@@ -2,8 +2,9 @@
 
 import React, { useState, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
-import { Clock, UploadCloud, Save, CheckCircle2 } from "lucide-react";
+import { UploadCloud, Save, CheckCircle2 } from "lucide-react";
 import { GlowingCards, GlowingCard } from "@/components/lightswind/glowing-cards";
+import { MotionCard, MotionCardGrid } from "@/components/ui/motion-card";
 
 type Status = "Tersedia Penuh" | "Tersedia Sebagian" | "Tidak tersedia" | "Pending";
 
@@ -200,13 +201,14 @@ export default function RegistrationPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <MotionCardGrid className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {facilities.map((facility) => {
                   const config = getStatusConfig(facility.status);
                   return (
-                    <div 
+                    <MotionCard
                       key={facility.id}
-                      className="p-4 border border-navy-200 rounded-lg flex flex-col gap-3 transition-colors hover:bg-ink-50/50 cursor-pointer"
+                      className="p-4 border border-navy-200 rounded-lg flex flex-col gap-3 hover:bg-ink-50/50"
+                      lift={false}
                     >
                       <div>
                         <h4 className="text-sm font-bold text-navy-900">{facility.name}</h4>
@@ -223,10 +225,10 @@ export default function RegistrationPage() {
                         <option value="Tersedia Sebagian">Tersedia Sebagian</option>
                         <option value="Tidak tersedia">Tidak tersedia</option>
                       </select>
-                    </div>
+                    </MotionCard>
                   );
                 })}
-              </div>
+              </MotionCardGrid>
             </GlowingCard>
 
             {/* 3. Upload Section */}
@@ -271,7 +273,7 @@ export default function RegistrationPage() {
             <button 
               onClick={handleSave}
               disabled={loading}
-              className="flex-1 py-4 bg-navy-900 text-white rounded-xl font-bold text-base hover:bg-navy-800 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex-1 py-4 bg-navy-900 text-white rounded-xl font-bold text-base hover:bg-navy-800 motion-safe:transition-[color,background-color,transform] shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed motion-safe:active:scale-[0.985]"
             >
               {loading ? (
                 <>Menyimpan...</>
@@ -284,7 +286,7 @@ export default function RegistrationPage() {
             <button 
               onClick={handleCancel}
               disabled={loading}
-              className="flex-1 py-4 bg-white border-2 border-line text-navy-900 rounded-xl font-bold text-base hover:bg-ink-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+              className="flex-1 py-4 bg-white border-2 border-line text-navy-900 rounded-xl font-bold text-base hover:bg-ink-50 motion-safe:transition-[color,background-color,transform] flex items-center justify-center gap-2 disabled:opacity-70 motion-safe:active:scale-[0.985]"
             >
               Batalkan
             </button>

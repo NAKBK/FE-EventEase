@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
-import { MapPin, ArrowUpRight, Minus, Activity, ShieldCheck, Accessibility, CheckCircle2 } from "lucide-react";
+import { ArrowUpRight, Minus, Activity, ShieldCheck, Accessibility, CheckCircle2 } from "lucide-react";
+import { MotionCard, MotionCardGrid } from "@/components/ui/motion-card";
 
 export default function OrganizerDashboard() {
   const [userName, setUserName] = useState("Organizer");
@@ -26,9 +27,9 @@ export default function OrganizerDashboard() {
           </div>
 
           {/* 3 Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MotionCardGrid className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Card 1 */}
-            <div className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+            <MotionCard className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-navy-200">
               <div className="flex items-center gap-2 text-ink-500 mb-4 font-medium text-sm">
                 Baru
               </div>
@@ -36,14 +37,14 @@ export default function OrganizerDashboard() {
                 <span className="text-4xl font-bold text-navy-900">12</span>
                 <p className="text-ink-500 text-sm mt-1">New Request</p>
               </div>
-              <div className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 w-fit px-2 py-1 rounded-md">
+              <div className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 w-fit px-2 py-1 rounded-md motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover/ee-card:translate-x-0.5">
                 <ArrowUpRight className="w-3.5 h-3.5" />
                 +3 minggu ini
               </div>
-            </div>
+            </MotionCard>
 
             {/* Card 2 */}
-            <div className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+            <MotionCard className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-navy-200">
               <div className="flex items-center gap-2 text-ink-500 mb-4 font-medium text-sm">
                 Proses
               </div>
@@ -55,10 +56,10 @@ export default function OrganizerDashboard() {
                 <Minus className="w-3.5 h-3.5" />
                 sama seperti kemarin
               </div>
-            </div>
+            </MotionCard>
 
             {/* Card 3 */}
-            <div className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+            <MotionCard className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-navy-200">
               <div className="flex items-center gap-2 text-ink-500 mb-4 font-medium text-sm">
                 Aktif
               </div>
@@ -70,13 +71,13 @@ export default function OrganizerDashboard() {
                 <Activity className="w-3.5 h-3.5" />
                 Live Now
               </div>
-            </div>
-          </div>
+            </MotionCard>
+          </MotionCardGrid>
 
           <div className="flex flex-col gap-8">
             
             {/* Accessibility Score Card */}
-            <div className="bg-navy-900 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-navy-800">
+            <MotionCard className="bg-navy-900 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-navy-800">
               {/* Decorative Soft White Hints */}
               <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-[80px] pointer-events-none"></div>
               <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-[80px] pointer-events-none"></div>
@@ -99,10 +100,10 @@ export default function OrganizerDashboard() {
                   Sangat Baik
                 </div>
               </div>
-            </div>
+            </MotionCard>
 
             {/* Accessibility Requests List */}
-            <div className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm">
+            <MotionCard className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm" lift={false}>
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-xl font-bold text-navy-900">Permintaan Aksesibilitas Terkini</h3>
@@ -143,7 +144,7 @@ export default function OrganizerDashboard() {
                   </span>
                 </div>
               </div>
-            </div>
+            </MotionCard>
             
           </div>
         </div>

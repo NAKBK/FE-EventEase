@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Calendar, MapPin, Loader2, X } from "lucide-react";
+import { Calendar, MapPin, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
-import Link from "next/link";
+import { MotionCard, MotionCardGrid } from "@/components/ui/motion-card";
 
 interface EventItem {
   id: string;
@@ -222,7 +222,7 @@ export default function EventManagementPage() {
           </div>
 
           {/* Banner: Register New Event */}
-          <div className="bg-gradient-to-br from-navy-900 to-[#1e2a45] text-white rounded-3xl p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+          <MotionCard className="bg-gradient-to-br from-navy-900 to-[#1e2a45] text-white rounded-3xl p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
             {/* Soft white hints */}
             <div className="absolute top-0 left-0 w-48 h-48 bg-white/20 rounded-full blur-[60px] -translate-x-1/3 -translate-y-1/3 pointer-events-none z-0"></div>
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-[60px] translate-x-1/3 translate-y-1/3 pointer-events-none z-0"></div>
@@ -245,7 +245,7 @@ export default function EventManagementPage() {
                 <div className="absolute inset-0 z-0 bg-gold-400 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
               </button>
             </div>
-          </div>
+          </MotionCard>
 
           {/* Filters */}
           <div className="flex items-center gap-2 p-1.5 bg-ink-100/50 rounded-xl w-fit">
@@ -274,9 +274,9 @@ export default function EventManagementPage() {
                 <Loader2 className="w-6 h-6 animate-spin text-ink-400" />
               </div>
             ) : events?.items && events.items.length > 0 ? (
-              <div className="flex flex-col gap-4">
+              <MotionCardGrid className="flex flex-col gap-4">
                 {events.items.map((evt) => (
-                  <div key={evt.id} className="bg-white rounded-2xl border border-line p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-navy-200 hover:shadow-md">
+                  <MotionCard key={evt.id} className="bg-white rounded-2xl border border-line p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-navy-200">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <span className={cn(
@@ -302,12 +302,12 @@ export default function EventManagementPage() {
                       </div>
                     </div>
                     
-                    <button className="w-full md:w-auto px-4 py-2 border border-line rounded-lg text-xs font-bold text-navy-900 hover:bg-ink-50 transition-colors">
+                    <button className="w-full md:w-auto px-4 py-2 border border-line rounded-lg text-xs font-bold text-navy-900 hover:bg-ink-50 motion-safe:transition-[color,background-color,transform] motion-safe:active:scale-[0.985]">
                       Kelola
                     </button>
-                  </div>
+                  </MotionCard>
                 ))}
-              </div>
+              </MotionCardGrid>
             ) : (
               <div className="bg-white rounded-2xl border border-line p-12 flex flex-col items-center justify-center text-center shadow-sm">
                 <div className="w-16 h-16 bg-ink-50 rounded-full flex items-center justify-center mb-4">

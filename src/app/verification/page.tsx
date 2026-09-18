@@ -17,6 +17,7 @@ import {
 } from "@/lib/api";
 import { formatDateTime, needLabels, verificationLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
+import { MotionAside, MotionCardButton, MotionCardGrid, MotionForm } from "@/components/ui/motion-card";
 
 type Choice = VerificationValue | "";
 
@@ -157,14 +158,14 @@ export default function VerificationPage() {
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
           ) : requests.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6">
-              <aside className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-fit">
+            <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6">
+              <MotionAside className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-fit" lift={false}>
                 <h2 className="text-lg font-bold text-navy-900 mb-4">Permintaan dikonfirmasi</h2>
                 <div className="space-y-3">
                   {requests.map((request) => {
                     const ready = request.eventStatus === "completed";
                     return (
-                      <button
+                      <MotionCardButton
                         key={request.id}
                         type="button"
                         disabled={!ready}
@@ -186,14 +187,14 @@ export default function VerificationPage() {
                               ? "Event belum selesai. Verifikasi tersedia setelah event berakhir."
                               : "Status event tidak dapat dimuat."}
                         </p>
-                      </button>
+                      </MotionCardButton>
                     );
                   })}
                 </div>
-              </aside>
+              </MotionAside>
 
               {selectedRequest ? (
-                <form onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-6">
+                <MotionForm onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-6" lift={false}>
                   <div className="flex items-start gap-4">
                     <div className="size-12 rounded-2xl bg-navy-50 flex items-center justify-center shrink-0">
                       <ClipboardCheck className="size-6 text-navy-700" />
@@ -239,12 +240,12 @@ export default function VerificationPage() {
 
                   <button
                     disabled={submitting || !allAnswered}
-                    className="rounded-xl bg-navy-900 px-5 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2"
+                    className="rounded-xl bg-navy-900 px-5 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
                   >
                     {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                     Kirim verifikasi
                   </button>
-                </form>
+                </MotionForm>
               ) : (
                 <div className="bg-white border border-line rounded-[2rem] p-10 text-center shadow-sm h-fit">
                   <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />
@@ -252,7 +253,7 @@ export default function VerificationPage() {
                   <p className="text-sm text-ink-500 mt-1">Verifikasi bisa dikirim setelah event yang kamu ikuti berakhir.</p>
                 </div>
               )}
-            </div>
+            </MotionCardGrid>
           ) : (
             <div className="bg-white border border-line rounded-2xl p-12 text-center">
               <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />

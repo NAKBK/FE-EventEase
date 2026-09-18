@@ -8,7 +8,6 @@ import { FAQSection } from "@/components/FAQSection";
 import { GlowingCards, GlowingCard } from "@/components/lightswind/glowing-cards";
 import { TrustedUsers } from "@/components/lightswind/trusted-users";
 import { DottedMap } from "@/components/ui/dotted-map";
-import { AnimatedShinyText } from "@/components/ui/animated-shiny-text";
 import { GlareHover } from "@/components/ui/glare-hover";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { TypingAnimation } from "@/components/ui/typing-animation";
@@ -16,6 +15,7 @@ import { CountUp } from "@/components/lightswind/count-up";
 import { MapPin, Target, Calendar, Accessibility, Activity, Heart, Baby, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AttendeeHome } from "@/components/attendee/AttendeeHome";
+import { MotionCardGrid } from "@/components/ui/motion-card";
 
 export default function Home() {
   const [role, setRole] = useState<string | null>(null);
@@ -167,7 +167,7 @@ export default function Home() {
             Kami akan menyesuaikan rekomendasi event dan rute navigasi sesuai kondisi agar pengalamanmu tetap maksimal.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <MotionCardGrid className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {[
               { title: "Pengguna Kursi Roda", icon: <Accessibility className="size-6 text-navy-700" /> },
               { title: "Pengguna Kruk", icon: <Activity className="size-6 text-navy-700" /> },
@@ -187,7 +187,7 @@ export default function Home() {
                 </div>
               </GlareHover>
             ))}
-          </div>
+          </MotionCardGrid>
         </div>
       </section>
 

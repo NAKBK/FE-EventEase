@@ -44,6 +44,7 @@ import {
   toLocalInputValue,
 } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
+import { MotionCard, MotionSection } from "@/components/ui/motion-card";
 
 const labelIcon = {
   fulfilled: Check,
@@ -178,7 +179,7 @@ export default function EventDetailPage() {
             </div>
           ) : (
             <>
-              <header className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm">
+              <MotionSection className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm" lift={false}>
                 <span className="inline-flex rounded-full bg-navy-50 px-3 py-1 text-xs font-bold text-navy-700 mb-3">
                   {statusLabel(event.status)}
                 </span>
@@ -194,11 +195,11 @@ export default function EventDetailPage() {
                   </span>
                 </div>
                 {event.description && <p className="mt-4 text-sm text-ink-700 leading-relaxed">{event.description}</p>}
-              </header>
+              </MotionSection>
 
               <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6">
                 <section className="flex flex-col gap-6">
-                  <div className="rounded-[2rem] bg-navy-900 text-white p-6 shadow-sm">
+                  <MotionCard className="rounded-[2rem] bg-navy-900 text-white p-6 shadow-sm">
                     <p className="text-sm text-navy-100 mb-2">Skor kecocokan untukmu</p>
                     <div className="flex items-end gap-3">
                       <p className="text-6xl font-bold">{match?.score ?? "-"}</p>
@@ -228,9 +229,9 @@ export default function EventDetailPage() {
                         Isi profil kebutuhan
                       </Link>
                     )}
-                  </div>
+                  </MotionCard>
 
-                  <div className="rounded-[2rem] bg-white border border-line p-6 shadow-sm">
+                  <MotionCard className="rounded-[2rem] bg-white border border-line p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="size-10 rounded-xl bg-navy-50 flex items-center justify-center">
                         <ShieldCheck className="size-5 text-navy-700" />
@@ -254,10 +255,10 @@ export default function EventDetailPage() {
                     <p className="text-xs text-ink-500 mt-3 leading-relaxed">
                       Ini indikator dari verifikasi peserta, bukan sertifikasi independen.
                     </p>
-                  </div>
+                  </MotionCard>
                 </section>
 
-                <section className="rounded-[2rem] bg-white border border-line p-6 sm:p-8 shadow-sm">
+                <MotionSection className="rounded-[2rem] bg-white border border-line p-6 sm:p-8 shadow-sm" lift={false}>
                   <h2 className="text-xl font-bold text-navy-900">Rincian kecocokan</h2>
                   <p className="text-sm text-ink-500 mt-1 mb-5">
                     Kebutuhanmu dibandingkan dengan klaim penyelenggara untuk tiap atribut.
@@ -333,11 +334,11 @@ export default function EventDetailPage() {
                       Klaim ini bukan hasil audit independen.
                     </p>
                   </div>
-                </section>
+                </MotionSection>
               </div>
 
               {event.media.length > 0 && (
-                <section className="rounded-[2rem] bg-white border border-line p-6 sm:p-8 shadow-sm">
+                <MotionSection className="rounded-[2rem] bg-white border border-line p-6 sm:p-8 shadow-sm" lift={false}>
                   <h2 className="text-xl font-bold text-navy-900">Foto bukti klaim</h2>
                   <p className="text-sm text-ink-500 mt-1 mb-4">Foto dari penyelenggara sebagai bukti, bukan sertifikasi.</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -351,11 +352,11 @@ export default function EventDetailPage() {
                       />
                     ))}
                   </div>
-                </section>
+                </MotionSection>
               )}
 
               {event.status === "upcoming" && (
-                <section className="rounded-[2rem] bg-white border border-line p-6 sm:p-8 shadow-sm">
+                <MotionSection className="rounded-[2rem] bg-white border border-line p-6 sm:p-8 shadow-sm" lift={false}>
                   <h2 className="text-xl font-bold text-navy-900">Ajukan permintaan aksesibilitas</h2>
                   <p className="text-sm text-ink-500 mt-1 mb-5">Permintaan menyertakan snapshot profil kebutuhanmu saat ini.</p>
 
@@ -407,14 +408,14 @@ export default function EventDetailPage() {
                       </div>
                       <button
                         disabled={submitting}
-                        className="w-full sm:w-fit rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2"
+                        className="w-full sm:w-fit rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
                       >
                         {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                         Kirim permintaan
                       </button>
                     </form>
                   )}
-                </section>
+                </MotionSection>
               )}
             </>
           )}
