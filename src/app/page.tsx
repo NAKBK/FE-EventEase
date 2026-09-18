@@ -11,6 +11,7 @@ import { DottedMap } from "@/components/ui/dotted-map";
 import { AnimatedShinyText } from "@/components/ui/animated-shiny-text";
 import { GlareHover } from "@/components/ui/glare-hover";
 import { DotPattern } from "@/components/ui/dot-pattern";
+import { TypingAnimation } from "@/components/ui/typing-animation";
 import { MapPin, Target, Calendar, Accessibility, Activity, Heart, Baby, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,7 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center pt-24 pb-16 px-8 text-center overflow-hidden" id="hero">
+      <section className="relative flex flex-col items-center justify-center pt-28 pb-20 lg:pt-32 lg:pb-24 px-8 text-center overflow-hidden" id="hero">
         {/* Background elements */}
         <DotPattern
           className={cn(
@@ -34,15 +35,19 @@ export default function Home() {
           Temukan event <br className="hidden md:block" />
           <em className="text-navy-600">tanpa hambatan.</em>
         </h1>
-        <p className="text-ink-500 text-[clamp(14px,2vw,18px)] leading-relaxed max-w-2xl mx-auto mb-10 relative z-10">
-          EventEase membantu kamu menemukan konser, seminar, dan acara favorit — lengkap dengan info aksesibilitas untuk pengguna dengan mobilitas terbatas.
-        </p>
+        <TypingAnimation 
+          className="text-ink-500 text-[clamp(14px,2vw,18px)] leading-relaxed max-w-2xl mx-auto mb-10 relative z-10 font-normal"
+          duration={15}
+        >
+          EventEase membantu kamu menemukan konser, seminar, dan acara favorit. Lengkap dengan info aksesibilitas untuk pengguna dengan mobilitas terbatas.
+        </TypingAnimation>
         
         <div className="mb-10 relative z-10">
           {/* Replace src string array with an array of objects which TrustedUsers might expect depending on the implementation */}
           <div className="flex flex-col items-center gap-3">
             <TrustedUsers 
               className="mb-2"
+              totalUsersText={8200}
               avatars={[
                 "https://i.pravatar.cc/150?u=a042581f4e29026024d",
                 "https://i.pravatar.cc/150?u=a042581f4e29026704d",
@@ -50,15 +55,15 @@ export default function Home() {
                 "https://i.pravatar.cc/150?u=a048581f4e29026701d",
               ]}
             />
-            <div className="flex items-center gap-1 text-gold-500 text-sm font-bold bg-gold-50 px-3 py-1 rounded-full border border-gold-400/30">
-              <span className="text-xl leading-none mr-1">★</span> 4.9 dari 5
-            </div>
           </div>
         </div>
 
-        <button className="group relative inline-flex h-14 items-center justify-center overflow-hidden rounded-full bg-navy-800 px-8 font-bold text-white transition-all hover:bg-navy-700 shadow-lg hover:shadow-xl z-10">
-          <span className="mr-2">Daftar sekarang</span>
-          <span className="transition-transform group-hover:translate-x-1">→</span>
+        <button className="group relative inline-flex h-14 items-center justify-center overflow-hidden rounded-full bg-navy-800 border border-navy-800 px-8 font-bold text-white shadow-lg hover:shadow-xl z-10 transition-colors">
+          <span className="relative z-10 flex items-center">
+            <span className="mr-2">Daftar sekarang</span>
+            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+          </span>
+          <div className="absolute inset-0 z-0 bg-navy-900 origin-left scale-x-0 transition-transform duration-700 ease-out group-hover:scale-x-100" />
         </button>
       </section>
 
