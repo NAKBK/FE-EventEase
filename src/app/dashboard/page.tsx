@@ -29,7 +29,7 @@ const getFirstNeed = (snapshot: any) => {
 export default function OrganizerDashboard() {
   const [userName, setUserName] = useState("Organizer");
   const [loading, setLoading] = useState(true);
-  
+
   const [baruCount, setBaruCount] = useState<number>(0);
   const [prosesCount, setProsesCount] = useState<number>(0);
   const [aktifCount, setAktifCount] = useState<number>(0);
@@ -81,7 +81,7 @@ export default function OrganizerDashboard() {
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gold-500/20 rounded-full blur-[120px] translate-x-1/4 translate-y-1/4 pointer-events-none -z-10"></div>
 
         <div className="relative z-10 max-w-6xl mx-auto flex flex-col gap-8">
-          
+
           {/* Header */}
           <div>
             <h1 className="font-serif text-4xl text-navy-900 mb-2 tracking-tight">Selamat datang, {userName}</h1>
@@ -128,13 +128,13 @@ export default function OrganizerDashboard() {
               </GlowingCards>
 
               <div className="flex flex-col gap-8">
-                
+
                 {/* Accessibility Score Card */}
                 <div className="bg-navy-900 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-navy-800">
                   {/* Decorative Soft White Hints */}
                   <div className="absolute -top-16 -right-16 w-96 h-96 bg-white/20 rounded-full blur-[80px] pointer-events-none"></div>
                   <div className="absolute -bottom-16 -left-16 w-96 h-96 bg-white/20 rounded-full blur-[80px] pointer-events-none"></div>
-                  
+
                   <div className="relative z-10 flex-1">
                     <h2 className="font-medium text-2xl font-bold text-white tracking-tight mb-2">
                       Accessibility Score
@@ -143,7 +143,7 @@ export default function OrganizerDashboard() {
                       Berdasarkan 24 kriteria aksesibilitas venue
                     </p>
                   </div>
-                  
+
                   <div className="relative z-10 text-left md:text-right min-w-[160px]">
                     <div className="text-5xl font-serif text-white font-bold mb-1 flex items-baseline md:justify-end gap-1">
                       <CountUp value={score ?? 0} className="text-white" />
@@ -166,10 +166,10 @@ export default function OrganizerDashboard() {
 
                   <div className="space-y-4">
                     {recentRequests.length === 0 ? (
-                      <p className="text-sm text-ink-500 py-4 text-center border border-dashed border-line rounded-xl bg-ink-50">Belum ada permintaan masuk.</p>
+                      <p className="text-sm text-ink-500 py-4 text-center border border-dashed border-line rounded-lg bg-ink-50">Belum ada permintaan masuk.</p>
                     ) : (
                       recentRequests.map((req) => (
-                        <div key={req.id} className={`p-4 border border-line rounded-xl flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:border-navy-200 transition-colors ${req.status !== 'pending' ? 'opacity-70' : ''}`}>
+                        <div key={req.id} className={`p-4 border border-line rounded-lg flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:border-navy-200 transition-colors ${req.status !== 'pending' ? 'opacity-70' : ''}`}>
                           <div className="flex items-center gap-4">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${req.status === 'pending' ? 'bg-gold-50' : 'bg-green-50'}`}>
                               {req.status === 'pending' ? (
@@ -184,8 +184,11 @@ export default function OrganizerDashboard() {
                             </div>
                           </div>
                           {req.status === 'pending' ? (
-                            <button className="px-4 py-2 bg-navy-900 text-white rounded-lg text-xs font-bold hover:bg-navy-800 transition-colors w-full sm:w-auto">
-                              Tanggapi
+                            <button className="group relative px-4 py-2 bg-white border border-navy-900 text-navy-900 rounded-lg text-xs font-bold w-full sm:w-auto overflow-hidden">
+                              <div className="absolute inset-0 bg-navy-900 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+                              <span className="relative z-10 flex items-center justify-center gap-1 group-hover:text-white transition-colors duration-300">
+                                Tanggapi <span className="opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300">&rarr;</span>
+                              </span>
                             </button>
                           ) : (
                             <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded-md text-[10px] font-bold uppercase tracking-wider sm:ml-auto">
@@ -197,7 +200,7 @@ export default function OrganizerDashboard() {
                     )}
                   </div>
                 </div>
-                
+
               </div>
             </>
           )}
