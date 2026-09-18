@@ -551,6 +551,7 @@ export default function EventManagementPage() {
 
                   <VenueMapPicker
                     value={{ lat: formData.venue.lat, lng: formData.venue.lng }}
+                    addressQuery={[formData.venue.name, formData.venue.address].filter(Boolean).join(", ")}
                     onChange={(point) =>
                       setFormData((current) => ({ ...current, venue: { ...current.venue, lat: point.lat, lng: point.lng } }))
                     }
