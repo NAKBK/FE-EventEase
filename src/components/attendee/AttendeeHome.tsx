@@ -1,109 +1,137 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Accessibility,
   Calendar,
   CheckCircle2,
+  ChevronDown,
   Clock,
+  ImageOff,
   Loader2,
   MapPin,
-  Search,
-  Send,
   ShieldCheck,
-  X,
+  TriangleAlert,
 } from "lucide-react";
 import {
-  createRequest,
-  EventDetail,
   EventListItem,
-  getErrorMessage,
   getDashboard,
+  getErrorMessage,
   getEvent,
   getEventMatch,
+  isApiError,
   listEvents,
   MatchResponse,
 } from "@/lib/api";
-import {
-  claimLabel,
-  claimTone,
-  formatDateTime,
-  fromLocalInputValue,
-  needLabels,
-  statusLabel,
-  toLocalInputValue,
-} from "@/lib/attendee-ui";
+import { formatDateTime, matchTier, statusLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
+import type { MapEvent } from "@/components/attendee/EventMap";
+import { MotionArticle, MotionCard, MotionCardGrid, MotionSection } from "@/components/ui/motion-card";
+import { EventFilters, EventFilterState, emptyFilters, filtersToQuery } from "@/components/attendee/EventFilters";
+import { JourneyStepper } from "@/components/attendee/JourneyStepper";
+import { PageBackdrop } from "@/components/attendee/PageBackdrop";
+
+const EventMap = dynamic(() => import("@/components/attendee/EventMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full flex items-center justify-center bg-bg-soft">
+      <Loader2 className="size-6 animate-spin text-navy-900" />
+    </div>
+  ),
+});
 
 interface EventWithMatch extends EventListItem {
   match?: MatchResponse | null;
 }
 
+const PAGE_SIZE = 6;
+const API_LIMIT = 50;
+
+const legend = [
+  { score: 80, label: "Cocok (75+)" },
+  { score: 60, label: "Sebagian (50–74)" },
+  { score: 20, label: "Kurang cocok (<50)" },
+  { score: null, label: "Belum dihitung" },
+];
+
 export function AttendeeHome() {
   const router = useRouter();
   const [events, setEvents] = useState<EventWithMatch[]>([]);
+  const [total, setTotal] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
-  const [activeEventTitle, setActiveEventTitle] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<"starts_at" | "match_score">("starts_at");
+  const [activeEvent, setActiveEvent] = useState<{ id: string; title: string; score: number } | null>(null);
+  const [filters, setFilters] = useState<EventFilterState>(emptyFilters);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selected, setSelected] = useState<EventDetail | null>(null);
-  const [selectedMatch, setSelectedMatch] = useState<MatchResponse | null>(null);
-  const [arrival, setArrival] = useState(toLocalInputValue());
-  const [note, setNote] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState("");
+  const [notice, setNotice] = useState("");
+  const [needsProfile, setNeedsProfile] = useState(false);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  // Photos only exist on the detail endpoint (API-005), so covers are fetched lazily for visible cards.
+  const [covers, setCovers] = useState<Record<string, { url: string; count: number } | null>>({});
+  const requestedCovers = useRef<Set<string>>(new Set());
 
-  const visibleClaims = useMemo(
-    () =>
-      [
-        "step_free_entrance",
-        "elevator_or_ramp",
-        "accessible_restroom",
-        "accessible_seating",
-        "rest_area",
-        "parking_or_dropoff",
-      ] as const,
-    [],
-  );
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
+  const fetchData = useCallback(async (next: EventFilterState) => {
     try {
-      const [eventData, dashboardData] = await Promise.allSettled([
-        listEvents({ status: "upcoming", q: query, limit: 20, offset: 0, sort }),
-        getDashboard(),
-      ]);
+      const dashboardPromise = getDashboard().catch(() => null);
+      let missingProfile = false;
+      let fallbackNotice = "";
+      let query = filtersToQuery(next);
 
-      if (dashboardData.status === "fulfilled") {
-        setPendingCount(dashboardData.value.pending_requests_count);
-        setActiveEventTitle(dashboardData.value.active_event?.event.title || null);
+      let eventData;
+      try {
+        eventData = await listEvents(query);
+      } catch (err: unknown) {
+        // Sorting by match score needs a saved profile; fall back instead of failing the whole list.
+        if (next.sort === "match_score" && isApiError(err, "NEED_PROFILE_MISSING")) {
+          missingProfile = true;
+          fallbackNotice = "Urutan skor cocok butuh profil kebutuhan, jadi daftar diurutkan menurut tanggal.";
+          query = { ...query, sort: "starts_at" };
+          eventData = await listEvents(query);
+        } else {
+          throw err;
+        }
       }
 
-      if (eventData.status === "rejected") throw eventData.reason;
-
       const matched = await Promise.all(
-        eventData.value.items.map(async (event) => {
+        eventData.items.map(async (event) => {
           try {
             const match = await getEventMatch(event.id);
             return { ...event, match };
-          } catch {
+          } catch (err: unknown) {
+            if (isApiError(err, "NEED_PROFILE_MISSING")) missingProfile = true;
             return { ...event, match: null };
           }
         }),
       );
 
+      const dashboard = await dashboardPromise;
+      if (dashboard) {
+        setPendingCount(dashboard.pending_requests_count);
+        setActiveEvent(
+          dashboard.active_event
+            ? {
+                id: dashboard.active_event.event.id,
+                title: dashboard.active_event.event.title,
+                score: dashboard.active_event.match.score,
+              }
+            : null,
+        );
+      }
+
+      setNeedsProfile(missingProfile);
+      setNotice(fallbackNotice);
+      setTotal(eventData.total);
       setEvents(matched);
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Gagal mengambil event."));
     } finally {
       setLoading(false);
     }
-  }, [query, sort]);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -119,256 +147,358 @@ export function AttendeeHome() {
       return;
     }
 
-    fetchData();
+    void fetchData(emptyFilters);
   }, [fetchData, router]);
 
-  const openEvent = async (eventId: string) => {
-    setSuccess("");
+  const applyFilters = (next: EventFilterState) => {
+    setFilters(next);
+    setPage(1);
     setError("");
-    try {
-      const [detail, match] = await Promise.allSettled([getEvent(eventId), getEventMatch(eventId)]);
-      if (detail.status === "rejected") throw detail.reason;
-      setSelected(detail.value);
-      setSelectedMatch(match.status === "fulfilled" ? match.value : null);
-      setArrival(toLocalInputValue(detail.value.starts_at));
-      setNote(`Mohon konfirmasi dukungan aksesibilitas untuk ${detail.value.title}.`);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Gagal membuka detail event."));
-    }
+    setLoading(true);
+    void fetchData(next);
   };
 
-  const submitRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selected) return;
+  const { mapEvents, unmapped } = useMemo(() => {
+    const mapped: MapEvent[] = [];
+    const missing: EventWithMatch[] = [];
 
-    setSubmitting(true);
-    setSuccess("");
-    setError("");
+    events.forEach((event) => {
+      if (typeof event.venue.lat === "number" && typeof event.venue.lng === "number") {
+        mapped.push({
+          id: event.id,
+          title: event.title,
+          venueName: event.venue.name,
+          lat: event.venue.lat,
+          lng: event.venue.lng,
+          score: event.match?.score ?? null,
+        });
+      } else {
+        missing.push(event);
+      }
+    });
 
-    try {
-      await createRequest(selected.id, {
-        arrival_estimate: fromLocalInputValue(arrival),
-        note,
-      });
+    return { mapEvents: mapped, unmapped: missing };
+  }, [events]);
 
-      setSuccess("Permintaan aksesibilitas berhasil dikirim.");
-      setSelected(null);
-      fetchData();
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Gagal mengirim permintaan."));
-    } finally {
-      setSubmitting(false);
-    }
+  const placeCount = useMemo(
+    () => new Set(mapEvents.map((event) => `${event.lat.toFixed(5)},${event.lng.toFixed(5)}`)).size,
+    [mapEvents],
+  );
+
+  const pageCount = Math.max(1, Math.ceil(events.length / PAGE_SIZE));
+  const visibleEvents = useMemo(
+    () => events.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [events, page],
+  );
+
+  useEffect(() => {
+    const missing = visibleEvents.filter((event) => !requestedCovers.current.has(event.id));
+    if (missing.length === 0) return;
+    missing.forEach((event) => requestedCovers.current.add(event.id));
+
+    (async () => {
+      const entries = await Promise.all(
+        missing.map(async (event): Promise<[string, { url: string; count: number } | null]> => {
+          try {
+            const detail = await getEvent(event.id);
+            return [event.id, detail.media[0] ? { url: detail.media[0].url, count: detail.media.length } : null];
+          } catch {
+            return [event.id, null];
+          }
+        }),
+      );
+      setCovers((current) => ({ ...current, ...Object.fromEntries(entries) }));
+    })();
+  }, [visibleEvents]);
+
+  const goToPage = (next: number) => {
+    setPage(Math.min(pageCount, Math.max(1, next)));
+    document.getElementById("daftar-event")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const focusCard = (id: string) => {
+    const index = events.findIndex((event) => event.id === id);
+    if (index >= 0) setPage(Math.floor(index / PAGE_SIZE) + 1);
+    setHighlightedId(id);
+    window.setTimeout(() => {
+      document.getElementById(`event-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
   };
 
   return (
-    <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
-      <div className="max-w-6xl mx-auto flex flex-col gap-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_0.8fr] gap-6">
-          <section className="bg-navy-900 rounded-[2rem] p-8 text-white border border-navy-800 shadow-xl overflow-hidden relative">
+    <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+      <PageBackdrop variant="home" />
+      <div className="max-w-6xl mx-auto flex flex-col gap-5">
+        <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-stretch">
+          <MotionSection className="bg-navy-900 rounded-[2rem] p-6 sm:p-7 text-white border border-navy-800 shadow-xl overflow-hidden relative h-full flex flex-col justify-center">
             <div className="absolute -right-24 -top-24 size-72 bg-white/10 rounded-full blur-[80px]" />
             <div className="relative">
-              <p className="text-gold-400 text-sm font-bold uppercase tracking-wider mb-3">Dashboard pengguna</p>
-              <h1 className="font-serif text-4xl sm:text-5xl leading-tight mb-4">Temukan event yang cocok dengan kebutuhanmu.</h1>
-              <p className="text-navy-100 max-w-2xl text-sm sm:text-base leading-relaxed">
-                Semua rekomendasi membaca profil kebutuhanmu, klaim aksesibilitas venue, dan respons penyelenggara.
+              <p className="text-gold-400 text-xs font-bold uppercase tracking-wider mb-2">Dashboard pengguna</p>
+              <h1 className="font-serif text-3xl sm:text-4xl leading-tight mb-2">Temukan event yang cocok dengan kebutuhanmu.</h1>
+              <p className="text-navy-100 max-w-2xl text-sm leading-relaxed">
+                Rekomendasi membaca profil kebutuhanmu, klaim aksesibilitas venue, dan respons penyelenggara.
               </p>
             </div>
-          </section>
+          </MotionSection>
 
-          <section className="grid grid-cols-2 gap-4">
-            <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-              <Clock className="size-5 text-gold-600 mb-4" />
-              <p className="text-3xl font-bold text-navy-900">{pendingCount}</p>
-              <p className="text-xs font-bold text-ink-500 uppercase mt-1">Permintaan pending</p>
-            </div>
-            <div className="bg-white border border-line rounded-2xl p-5 shadow-sm">
-              <ShieldCheck className="size-5 text-green-600 mb-4" />
-              <p className="text-base font-bold text-navy-900 line-clamp-2 min-h-12">{activeEventTitle || "Belum ada"}</p>
-              <p className="text-xs font-bold text-ink-500 uppercase mt-1">Event aktif</p>
-            </div>
-          </section>
-        </div>
-
-        {success && (
-          <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
-            {success}
+          <div className="grid grid-cols-2 gap-4 h-full">
+            <MotionCard className="bg-white border border-line rounded-2xl p-4 shadow-sm hover:border-navy-100 h-full flex flex-col justify-between">
+              <Clock className="size-5 text-gold-500 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover/ee-card:-translate-y-0.5 motion-safe:group-hover/ee-card:scale-105" />
+              <div>
+                <p className="text-3xl font-bold text-navy-900">{pendingCount}</p>
+                <p className="text-xs font-bold text-ink-500 uppercase mt-1">Permintaan pending</p>
+              </div>
+            </MotionCard>
+            <MotionCard className="bg-white border border-line rounded-2xl p-4 shadow-sm hover:border-navy-100 h-full flex flex-col justify-between">
+              <ShieldCheck className="size-5 text-green-500 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover/ee-card:-translate-y-0.5 motion-safe:group-hover/ee-card:scale-105" />
+              <div>
+                {activeEvent ? (
+                  <Link href={`/events/${activeEvent.id}`} className="block">
+                    <p className="text-sm font-bold text-navy-900 line-clamp-2 hover:underline">{activeEvent.title}</p>
+                  </Link>
+                ) : (
+                  <p className="text-sm font-bold text-navy-900">Belum ada</p>
+                )}
+                <p className="text-xs font-bold text-ink-500 uppercase mt-1">
+                  Event aktif{activeEvent ? ` · skor ${activeEvent.score}` : ""}
+                </p>
+              </div>
+            </MotionCard>
           </div>
-        )}
+        </MotionCardGrid>
+
+        <details className="group rounded-2xl border border-line bg-white shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-navy-900">
+            Bagaimana alur di EventEase?
+            <ChevronDown className="size-4 text-ink-500 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="flex flex-col gap-3 border-t border-line px-4 py-4">
+            <JourneyStepper current={-1} />
+            <p className="text-xs text-ink-500 leading-relaxed">
+              Kamu dapat datang ke event kapan pun: EventEase tidak mengatur kehadiran atau tiket, yang itu mengikuti ketentuan
+              penyelenggara. EventEase membantu menilai <strong>kecocokan</strong> event dengan kebutuhanmu. Kalau kamu ingin kepastian
+              dukungan aksesibilitas, kirim <strong>permintaan</strong>. Setelah penyelenggara merespons dan kamu mengonfirmasi, kamu
+              punya komitmen tertulis. Begitu event selesai, <strong>permintaan itu bisa kamu verifikasi</strong>, dan hasilnya membentuk
+              skor keandalan penyelenggara.
+            </p>
+          </div>
+        </details>
 
         {error && (
-          <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            {error}
+          <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{error}</div>
+        )}
+
+        {needsProfile && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-50 px-4 py-3 text-sm text-ink-700">
+            <div className="flex items-start gap-3">
+              <TriangleAlert className="size-4 text-amber-500 shrink-0 mt-0.5" />
+              <p>
+                <strong>Profil kebutuhanmu belum disimpan,</strong> jadi skor kecocokan belum bisa dihitung.
+              </p>
+            </div>
+            <Link href="/profile" className="rounded-xl bg-navy-900 px-4 py-2 text-center text-sm font-bold text-white hover:bg-navy-800">
+              Isi profil kebutuhan
+            </Link>
           </div>
         )}
 
-        <section className="flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <EventFilters value={filters} onApply={applyFilters} disabled={loading} />
+
+        {notice && (
+          <div className="rounded-xl border border-amber-500/20 bg-amber-50 px-4 py-2 text-sm text-ink-700">{notice}</div>
+        )}
+
+        <section className="flex flex-col gap-2">
+          <div className="flex items-end justify-between gap-3">
             <div>
-              <h2 className="text-xl font-bold text-navy-900">Event untuk kamu</h2>
-              <p className="text-sm text-ink-500">Skor cocok dihitung dari profil kebutuhanmu.</p>
+              <h2 className="text-lg font-bold text-navy-900">Peta event</h2>
+              <p className="text-xs text-ink-500">Warna pin menunjukkan skor kecocokan dari profil kebutuhanmu.</p>
             </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                fetchData();
-              }}
-              className="flex flex-col sm:flex-row gap-2"
-            >
-              <div className="relative">
-                <Search className="size-4 text-ink-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Cari event"
-                  className="pl-9 pr-4 py-2.5 rounded-xl border border-line bg-white text-sm w-full sm:w-64 focus:outline-none focus:border-navy-500"
-                />
+            {!loading && (
+              <p className="text-xs font-bold text-ink-500">
+                {events.length} event · {placeCount} lokasi di peta
+                {unmapped.length > 0 ? ` · ${unmapped.length} tanpa koordinat` : ""}
+              </p>
+            )}
+          </div>
+          <div className="relative isolate h-[300px] overflow-hidden rounded-[2rem] border border-line shadow-sm bg-white">
+            {loading ? (
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="size-8 animate-spin text-navy-900" />
               </div>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as "starts_at" | "match_score")}
-                className="px-4 py-2.5 rounded-xl border border-line bg-white text-sm font-semibold text-navy-900"
-              >
-                <option value="starts_at">Tanggal terdekat</option>
-                <option value="match_score">Skor cocok</option>
-              </select>
-              <button className="px-5 py-2.5 rounded-xl bg-navy-900 text-white text-sm font-bold hover:bg-navy-800">
-                Terapkan
-              </button>
-            </form>
+            ) : mapEvents.length > 0 ? (
+              <EventMap events={mapEvents} highlightedId={highlightedId} onSelect={focusCard} />
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center px-6">
+                <MapPin className="size-10 text-ink-300 mb-3" />
+                <h3 className="font-bold text-navy-900">Belum ada event dengan koordinat</h3>
+                <p className="text-sm text-ink-500 mt-1">Lokasi event yang punya koordinat akan tampil di sini.</p>
+              </div>
+            )}
+          </div>
+          <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-500">
+            {legend.map((item) => (
+              <li key={item.label} className="flex items-center gap-2">
+                <span
+                  className="inline-block size-3 rounded-full border border-white shadow-sm"
+                  style={{ background: matchTier(item.score).color }}
+                  aria-hidden="true"
+                />
+                {item.label}
+              </li>
+            ))}
+            <li className="flex items-center gap-2">
+              <span className="inline-flex size-4 items-center justify-center rounded-full bg-navy-900 text-[9px] font-bold text-white" aria-hidden="true">
+                2
+              </span>
+              Beberapa event di venue yang sama
+            </li>
+          </ul>
+        </section>
+
+        <section id="daftar-event" className="flex flex-col gap-3 scroll-mt-24">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-navy-900">Event untuk kamu</h2>
+              <p className="text-xs text-ink-500">Skor cocok dihitung dari profil kebutuhanmu.</p>
+            </div>
+            {!loading && events.length > 0 && (
+              <p className="text-xs font-bold text-ink-500">
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, events.length)} dari {total}
+              </p>
+            )}
           </div>
 
+          {!loading && total > API_LIMIT && (
+            <p className="rounded-xl border border-amber-500/20 bg-amber-50 px-4 py-2 text-xs text-ink-700">
+              Menampilkan {API_LIMIT} dari {total} event. Persempit dengan filter agar hasilnya lengkap.
+            </p>
+          )}
+
           {loading ? (
-            <div className="py-16 flex justify-center">
+            <div className="py-12 flex justify-center">
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
           ) : events.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {events.map((event) => (
-                <article key={event.id} className="bg-white border border-line rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-bold text-gold-600 uppercase mb-2">{statusLabel(event.status)}</p>
-                      <h3 className="text-lg font-bold text-navy-900 leading-snug">{event.title}</h3>
-                    </div>
-                    <div className="size-14 rounded-2xl bg-navy-50 flex flex-col items-center justify-center shrink-0">
-                      <span className="text-lg font-bold text-navy-900">{event.match?.score ?? "-"}</span>
-                      <span className="text-[10px] font-bold text-ink-500">MATCH</span>
-                    </div>
-                  </div>
+            <>
+              <MotionCardGrid key={page} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-fr gap-4">
+                {visibleEvents.map((event) => {
+                  const tier = matchTier(event.match?.score);
+                  return (
+                    <MotionArticle
+                      key={event.id}
+                      id={`event-${event.id}`}
+                      onMouseEnter={() => setHighlightedId(event.id)}
+                      onMouseLeave={() => setHighlightedId(null)}
+                      className={cn(
+                        "bg-white border rounded-2xl p-4 shadow-sm flex h-full flex-col gap-3",
+                        highlightedId === event.id ? "border-navy-500" : "border-line",
+                      )}
+                    >
+                      <div className="relative -mx-4 -mt-4 h-28 overflow-hidden rounded-t-2xl bg-bg-soft">
+                        {covers[event.id] ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={covers[event.id]!.url}
+                            alt={`Foto fasilitas ${event.title}`}
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center gap-1 text-ink-300">
+                            <ImageOff className="size-5" />
+                            <span className="text-[11px] font-bold">
+                              {event.id in covers ? "Belum ada foto" : "Memuat foto"}
+                            </span>
+                          </div>
+                        )}
+                        {covers[event.id] && covers[event.id]!.count > 1 && (
+                          <span className="absolute bottom-2 right-2 rounded-full bg-navy-900 px-2 py-0.5 text-[10px] font-bold text-white">
+                            {covers[event.id]!.count} foto
+                          </span>
+                        )}
+                      </div>
 
-                  <div className="space-y-2 text-sm text-ink-600">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="size-4 text-ink-400" />
-                      {formatDateTime(event.starts_at)}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="size-4 text-ink-400" />
-                      {event.venue.name}, {event.venue.city}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="size-4 text-ink-400" />
-                      {event.organizer.name} · skor {event.organizer.reliability_score ?? "-"}
-                    </div>
-                  </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-bold text-navy-700 uppercase mb-1">{statusLabel(event.status)}</p>
+                          <h3 className="text-base font-bold text-navy-900 leading-snug line-clamp-2 min-h-[2.75rem]">{event.title}</h3>
+                        </div>
+                        <div
+                          className={cn(
+                            "size-12 rounded-xl flex flex-col items-center justify-center shrink-0 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover/ee-card:scale-105",
+                            tier.tone,
+                          )}
+                        >
+                          <span className="text-base font-bold text-navy-900 leading-none">{event.match?.score ?? "-"}</span>
+                          <span className="text-[9px] font-bold text-ink-500 mt-0.5">MATCH</span>
+                        </div>
+                      </div>
 
+                      <div className="space-y-1.5 text-xs text-ink-500">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="size-3.5 shrink-0 text-ink-300" />
+                          <span className="truncate">{formatDateTime(event.starts_at)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="size-3.5 shrink-0 text-ink-300" />
+                          <span className="truncate">
+                            {event.venue.name}, {event.venue.city}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="size-3.5 shrink-0 text-ink-300" />
+                          <span className="truncate">
+                            {event.organizer.name} ·{" "}
+                            {event.organizer.reliability_score !== null
+                              ? `skor ${event.organizer.reliability_score} (${event.organizer.sample_count})`
+                              : "belum ada verifikasi"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/events/${event.id}`}
+                        className="mt-auto w-full rounded-xl bg-navy-900 px-4 py-2.5 text-center text-sm font-bold text-white hover:bg-navy-800 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
+                      >
+                        Lihat detail & ajukan bantuan
+                      </Link>
+                    </MotionArticle>
+                  );
+                })}
+              </MotionCardGrid>
+
+              {pageCount > 1 && (
+                <nav className="flex items-center justify-center gap-2" aria-label="Halaman event">
                   <button
-                    onClick={() => openEvent(event.id)}
-                    className="mt-auto w-full rounded-xl bg-navy-900 px-4 py-3 text-sm font-bold text-white hover:bg-navy-800"
+                    onClick={() => goToPage(page - 1)}
+                    disabled={page === 1}
+                    className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-bg-soft disabled:opacity-50"
                   >
-                    Lihat & ajukan bantuan
+                    Sebelumnya
                   </button>
-                </article>
-              ))}
-            </div>
+                  <span className="text-sm font-bold text-ink-500">
+                    {page} / {pageCount}
+                  </span>
+                  <button
+                    onClick={() => goToPage(page + 1)}
+                    disabled={page === pageCount}
+                    className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-bg-soft disabled:opacity-50"
+                  >
+                    Berikutnya
+                  </button>
+                </nav>
+              )}
+            </>
           ) : (
-            <div className="bg-white rounded-2xl border border-line p-12 text-center">
+            <div className="bg-white rounded-2xl border border-line p-10 text-center">
               <Accessibility className="size-10 text-ink-300 mx-auto mb-3" />
               <h3 className="font-bold text-navy-900">Belum ada event ditemukan</h3>
-              <p className="text-sm text-ink-500 mt-1">Coba ubah kata kunci pencarianmu.</p>
+              <p className="text-sm text-ink-500 mt-1">Coba ubah kata kunci atau longgarkan filter.</p>
             </div>
           )}
         </section>
       </div>
-
-      {selected && (
-        <div className="fixed inset-0 z-50 bg-navy-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-3xl rounded-[2rem] shadow-2xl border border-line max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-6 py-5 border-b border-line flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-serif text-navy-900">{selected.title}</h2>
-                <p className="text-sm text-ink-500 mt-1">{selected.venue.name}, {selected.venue.city}</p>
-              </div>
-              <button onClick={() => setSelected(null)} className="p-2 rounded-full hover:bg-ink-50">
-                <X className="size-5" />
-              </button>
-            </div>
-
-            <div className="overflow-y-auto p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-[0.8fr_1.2fr] gap-4">
-                <div className="rounded-2xl bg-navy-900 text-white p-5">
-                  <p className="text-sm text-navy-100 mb-2">Skor kecocokan</p>
-                  <p className="text-5xl font-bold">{selectedMatch?.score ?? "-"}</p>
-                  <p className="text-xs text-navy-100 mt-3">{selectedMatch?.summary || "Simpan profil kebutuhan agar skor dapat dihitung."}</p>
-                </div>
-                <div className="rounded-2xl border border-line p-5">
-                  <h3 className="font-bold text-navy-900 mb-3">Klaim aksesibilitas</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {visibleClaims.map((key) => (
-                      <div key={key} className="flex items-center justify-between gap-2 rounded-xl bg-ink-50 px-3 py-2">
-                        <span className="text-xs font-semibold text-ink-600">{needLabels[key]}</span>
-                        <span className={cn("text-[10px] font-bold rounded-full px-2 py-1", claimTone(selected.claim[key]))}>
-                          {claimLabel(selected.claim[key])}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-ink-500 mt-3">
-                    Jarak jalan kaki: {selected.claim.walking_distance_m ?? "-"} m · sumber {selected.claim.source}
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={submitRequest} className="rounded-2xl border border-line p-5 space-y-4">
-                <div>
-                  <h3 className="font-bold text-navy-900">Ajukan permintaan aksesibilitas</h3>
-                  <p className="text-sm text-ink-500">Permintaan akan menyertakan snapshot profil kebutuhanmu.</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-navy-900">Estimasi tiba</label>
-                    <input
-                      type="datetime-local"
-                      value={arrival}
-                      onChange={(e) => setArrival(e.target.value)}
-                      className="px-4 py-3 rounded-xl border border-line bg-bg text-sm focus:outline-none focus:border-navy-500"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-navy-900">Catatan</label>
-                    <textarea
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      maxLength={500}
-                      rows={3}
-                      className="px-4 py-3 rounded-xl border border-line bg-bg text-sm resize-none focus:outline-none focus:border-navy-500"
-                      required
-                    />
-                  </div>
-                </div>
-                <button
-                  disabled={submitting}
-                  className="w-full rounded-xl bg-navy-900 px-4 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2"
-                >
-                  {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                  Kirim permintaan
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

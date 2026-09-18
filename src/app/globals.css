@@ -153,3 +153,11 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+.leaflet-container {
+  font-family: var(--font-sans);
+}
+
+/* Desaturate OSM tiles so the basemap stays neutral and the match-colored pins carry the color. */
+.eventease-tiles {
+  filter: grayscale(1) brightness(1.04) contrast(0.92);
+}

@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
+import { HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { MotionCard, MotionCardGrid } from '@/components/ui/motion-card';
 
-export interface GlowingCardProps {
+export interface GlowingCardProps extends HTMLMotionProps<"div"> {
   children: React.ReactNode;
   className?: string;
   glowColor?: string;
@@ -52,7 +54,8 @@ export const GlowingCard: React.FC<GlowingCardProps> = ({
   ...props
 }) => {
   return (
-    <div
+    <MotionCard
+      lift={hoverEffect}
       className={cn(
         "relative flex-1 min-w-[14rem] p-6 rounded-2xl text-black dark:text-white",
         "bg-background border ",
@@ -65,7 +68,7 @@ export const GlowingCard: React.FC<GlowingCardProps> = ({
       {...props}
     >
       {children}
-    </div>
+    </MotionCard>
   );
 };
 
@@ -87,7 +90,6 @@ export const GlowingCards: React.FC<GlowingCardsProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [showOverlay, setShowOverlay] = useState(false);
 
   useEffect(() => {
@@ -101,7 +103,6 @@ export const GlowingCards: React.FC<GlowingCardsProps> = ({
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      setMousePosition({ x, y });
       setShowOverlay(true);
 
       // Using string concatenation for style properties
@@ -149,14 +150,22 @@ export const GlowingCards: React.FC<GlowingCardsProps> = ({
         )}
         style={{ padding: "var(--padding)" }} // String literal
       >
-        <div
+        <MotionCardGrid
           className={cn(
             "flex items-center justify-center flex-wrap gap-[var(--gap)]",
             responsive && "flex-col sm:flex-row "
           )}
         >
-          {children}
-        </div>
+          {React.Children.map(children, (child) => {
+            if (React.isValidElement(child) && child.type === GlowingCard) {
+              const element = child as React.ReactElement<GlowingCardProps>;
+              return React.cloneElement(element, {
+                hoverEffect: enableHover && element.props.hoverEffect !== false,
+              });
+            }
+            return child;
+          })}
+        </MotionCardGrid>
 
         {enableGlow && (
           <div
@@ -181,9 +190,9 @@ export const GlowingCards: React.FC<GlowingCardsProps> = ({
               )}
               style={{ padding: "var(--padding)" }} // String literal
             >
-              {React.Children.map(children, (child, index) => {
+              {React.Children.map(children, (child) => {
                 if (React.isValidElement(child) && child.type === GlowingCard) {
-                  const element = child as React.ReactElement<any>;
+                  const element = child as React.ReactElement<GlowingCardProps>;
                   const cardGlowColor = element.props.glowColor || "#3b82f6";
                   return React.cloneElement(element, {
                     className: cn(

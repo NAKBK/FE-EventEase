@@ -34,6 +34,7 @@ export interface EventListItem {
     id: string;
     name: string;
     city: string;
+    address?: string;
     lat?: number | null;
     lng?: number | null;
   };
@@ -97,6 +98,7 @@ export interface MatchResponse {
 export interface AccessibilityRequest {
   id: string;
   event_id: string;
+  attendee_id?: string;
   event_title: string;
   status: RequestStatus;
   arrival_estimate: string;
@@ -108,6 +110,7 @@ export interface AccessibilityRequest {
     responded_at: string;
   };
   created_at: string;
+  confirmed_at?: string | null;
 }
 
 export interface RequestListResponse {
@@ -126,7 +129,7 @@ export interface DashboardResponse {
   pending_requests_count: number;
   active_event: null | {
     request_id: string;
-    event: EventDetail;
+    event: EventListItem;
     match: Pick<MatchResponse, "score" | "weight_version" | "unknown_attributes">;
   };
   recent_requests: AccessibilityRequest[];
@@ -165,6 +168,29 @@ export function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+export interface ApiErrorField {
+  location: Array<string | number>;
+  type: string;
+}
+
+export class ApiError extends Error {
+  status: number;
+  code: string;
+  fields: ApiErrorField[];
+
+  constructor(status: number, code: string, message: string, fields: ApiErrorField[] = []) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.fields = fields;
+  }
+}
+
+export function isApiError(error: unknown, code?: string): error is ApiError {
+  return error instanceof ApiError && (code === undefined || error.code === code);
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => null);
 
@@ -173,11 +199,18 @@ async function parseResponse<T>(response: Response): Promise<T> {
       data?.error?.message ||
       data?.message ||
       `API merespons dengan status ${response.status}`;
-    throw new Error(message);
+    throw new ApiError(
+      response.status,
+      data?.error?.code || "UNKNOWN_ERROR",
+      message,
+      data?.error?.details?.fields || [],
+    );
   }
 
   return data as T;
 }
+
+const publicPaths = ["/api/auth/"];
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken();
@@ -186,10 +219,20 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  } catch {
+    throw new ApiError(0, "NETWORK_ERROR", "Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.");
+  }
+
+  // An expired/invalid token on a protected endpoint ends the session instead of
+  // leaving every page stuck on an error message.
+  if (response.status === 401 && token && !publicPaths.some((p) => path.startsWith(p))) {
+    clearSession();
+    if (typeof window !== "undefined") window.location.assign("/login?expired=1");
+    throw new ApiError(401, "SESSION_EXPIRED", "Sesi berakhir. Silakan masuk kembali.");
+  }
 
   return parseResponse<T>(response);
 }
@@ -307,6 +350,21 @@ export function submitVerification(
     headers: jsonHeaders,
     body: JSON.stringify({ attributes }),
   });
+}
+
+export interface OrganizerProfile {
+  id: string;
+  name: string;
+  reliability: {
+    score: number | null;
+    sample_count: number;
+    window_size: number;
+    updated_at: string | null;
+  };
+}
+
+export function getOrganizer(organizerId: string) {
+  return apiFetch<OrganizerProfile>(`/api/organizers/${organizerId}`);
 }
 
 export function getDashboard() {

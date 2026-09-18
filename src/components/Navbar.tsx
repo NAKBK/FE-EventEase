@@ -71,13 +71,10 @@ export const Navbar = () => {
               <TextRoll center className="text-sm font-extrabold uppercase">HOME</TextRoll>
             </Link>
             <Link href="/history" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
-              <TextRoll center className="text-sm font-extrabold uppercase">RIWAYAT</TextRoll>
+              <TextRoll center className="text-sm font-extrabold uppercase">PERMINTAAN</TextRoll>
             </Link>
             <Link href="/verification" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
               <TextRoll center className="text-sm font-extrabold uppercase">VERIFIKASI</TextRoll>
-            </Link>
-            <Link href="/request" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
-              <TextRoll center className="text-sm font-extrabold uppercase">PERMINTAAN</TextRoll>
             </Link>
             <Link href="/profile" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
               <TextRoll center className="text-sm font-extrabold uppercase">PROFIL</TextRoll>
