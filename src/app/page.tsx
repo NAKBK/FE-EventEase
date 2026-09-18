@@ -215,7 +215,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Datang & Nikmati</h3>
               <p className="text-navy-100 text-sm leading-relaxed">
-                Dapatkan rute aksesibel langsung ke kursimu. Tinggal datang dan nikmati acaranya.
+                Dapatkan rute yang aksesibel langsung ke kursimu. Tinggal datang dan nikmati acaranya.
               </p>
             </div>
           </div>
