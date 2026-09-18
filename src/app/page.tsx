@@ -43,7 +43,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center pt-28 pb-20 lg:pt-32 lg:pb-24 px-8 text-center overflow-hidden" id="hero">
         {/* Background Image Overlay */}
-        <div 
+        <div
           className="absolute inset-0 -z-20 opacity-10 pointer-events-none"
           style={{
             backgroundImage: "url('/crowd.png')",
@@ -132,7 +132,7 @@ export default function Home() {
               <em className="text-navy-600">dalam satu tempat.</em>
             </h2>
             <p className="text-ink-500 text-lg">
-              Dari pencarian event hingga navigasi aksesibel, kami rancang untuk semua orang.
+              Dari transparansi skor aksesibilitas hingga kemudahan mengajukan request fasilitas, kami rancang untuk semua orang.
             </p>
           </div>
 
@@ -142,9 +142,9 @@ export default function Home() {
                 <div className="bg-white size-12 rounded-full flex items-center justify-center mb-6 shadow-sm border border-line">
                   <Target className="text-navy-700 size-6" />
                 </div>
-                <h3 className="text-xl font-bold text-navy-900 mb-3">Pencarian Cerdas</h3>
+                <h3 className="text-xl font-bold text-navy-900 mb-3">Skor Aksesibilitas Transparan</h3>
                 <p className="text-ink-500 text-sm leading-relaxed">
-                  Temukan event berdasarkan genre, lokasi, tanggal, dan tingkat aksesibilitas venue.
+                  Ketahui tingkat aksesibilitas setiap venue secara jelas dan akurat sebelum mendaftar event pilihanmu.
                 </p>
               </GlowingCard>
 
@@ -152,9 +152,9 @@ export default function Home() {
                 <div className="bg-white size-12 rounded-full flex items-center justify-center mb-6 shadow-sm border border-line">
                   <MapPin className="text-navy-700 size-6" />
                 </div>
-                <h3 className="text-xl font-bold text-navy-900 mb-3">Navigasi Aksesibel</h3>
+                <h3 className="text-xl font-bold text-navy-900 mb-3">Request Kebutuhan Khusus</h3>
                 <p className="text-ink-500 text-sm leading-relaxed">
-                  Rute khusus untuk kursi roda, jalur landai, lift, dan toilet aksesibel di setiap venue.
+                  Punya kebutuhan tambahan? Ajukan request aksesibilitas langsung ke penyelenggara acara dengan mudah.
                 </p>
               </GlowingCard>
 
@@ -162,9 +162,9 @@ export default function Home() {
                 <div className="bg-white size-12 rounded-full flex items-center justify-center mb-6 shadow-sm border border-line">
                   <Calendar className="text-navy-700 size-6" />
                 </div>
-                <h3 className="text-xl font-bold text-navy-900 mb-3">Jadwal Personal</h3>
+                <h3 className="text-xl font-bold text-navy-900 mb-3">Skor Keandalan Penyelenggara</h3>
                 <p className="text-ink-500 text-sm leading-relaxed">
-                  Simpan event favorit, dapatkan pengingat, dan atur rencana harianmu dengan mudah.
+                  Pilih event dengan tenang berdasarkan skor rekam jejak penyelenggara dalam memenuhi kebutuhan aksesibilitas.
                 </p>
               </GlowingCard>
             </GlowingCards>
@@ -238,7 +238,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Temukan Event</h3>
               <p className="text-navy-100 text-sm leading-relaxed">
-                Jelajahi ribuan event di kota kamu. Filter berdasarkan tanggal, genre, dan aksesibilitas.
+                Jelajahi ribuan event. Filter berdasarkan tanggal, genre, dan aksesibilitas.
               </p>
             </div>
 
@@ -248,7 +248,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Datang & Nikmati</h3>
               <p className="text-navy-100 text-sm leading-relaxed">
-                Dapatkan rute yang aksesibel langsung ke kursimu. Tinggal datang dan nikmati acaranya.
+                Nikmati acara tanpa rasa khawatir. Kebutuhan aksesibilitasmu telah dipersiapkan dengan baik oleh penyelenggara.
               </p>
             </div>
           </div>
@@ -266,7 +266,7 @@ export default function Home() {
               Kami siap <br /><em className="text-gold-400">membantu di mana saja.</em>
             </h2>
             <p className="text-navy-100 text-lg leading-relaxed max-w-md">
-              Terus berkembang ke seluruh penjuru Indonesia. Dari Jakarta hingga pelosok daerah, visi kami adalah membuat setiap event jadi inklusif.
+              Memulai perjalanan dari Jakarta, layanan kami akan terus berkembang ke seluruh penjuru Indonesia. Visi kami jelas: membuat setiap event jadi inklusif.
             </p>
           </div>
           <div className="flex-1 w-full flex justify-end opacity-80 overflow-hidden md:-mr-8">
@@ -338,7 +338,7 @@ export default function Home() {
       <section className="py-24 px-8 bg-bg relative overflow-hidden">
         <div className="max-w-5xl mx-auto">
           <div className="w-full bg-gradient-to-br from-navy-900 to-[#1e2a45] p-12 md:p-20 text-center relative shadow-xl overflow-hidden rounded-[2rem]">
-            
+
             {/* Soft white hints */}
             <div className="absolute top-0 left-0 w-48 h-48 bg-white/20 rounded-full blur-[60px] -translate-x-1/3 -translate-y-1/3 pointer-events-none z-0"></div>
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-[60px] translate-x-1/3 translate-y-1/3 pointer-events-none z-0"></div>
@@ -348,7 +348,7 @@ export default function Home() {
                 Siap mulai? Kami bantu sampai event-nya.
               </h2>
               <p className="text-gold-400 mb-10 max-w-xl mx-auto text-sm md:text-base leading-relaxed font-medium">
-                Gratis selamanya untuk fitur dasar. Upgrade kapan saja kamu<br className="hidden sm:block" /> butuh lebih.
+                Gunakan seluruh fitur EventEase secara gratis.<br className="hidden sm:block" /> Tidak ada biaya tersembunyi.
               </p>
 
               <div className="flex flex-col sm:flex-row justify-center gap-4 md:gap-6">
@@ -358,7 +358,7 @@ export default function Home() {
                     <div className="absolute inset-0 z-0 bg-gold-400 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
                   </button>
                 </Link>
-                
+
                 <Link href="#faq">
                   <button className="group relative inline-flex h-12 md:h-14 items-center justify-center overflow-hidden rounded-full bg-transparent border border-white/20 text-white font-medium px-8 transition-colors w-full sm:w-auto">
                     <span className="relative z-10 transition-colors duration-300 group-hover:text-navy-900">Lihat FAQ</span>
