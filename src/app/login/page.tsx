@@ -83,10 +83,6 @@ export default function LoginPage() {
       <div className="relative z-10 flex flex-1 w-full max-w-[1600px] mx-auto pointer-events-none">
         {/* Left Branding (Desktop only) */}
         <div className="hidden lg:flex flex-col w-[65%] justify-center p-12 xl:p-24 relative">
-          <Link href="/" className="absolute top-12 left-12 xl:left-24 flex items-center gap-2 text-navy-100 hover:text-white transition-colors group font-medium pointer-events-auto">
-            <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform" />
-            Kembali
-          </Link>
           
           <div className="max-w-xl pointer-events-auto">
             <h1 className="font-serif text-5xl xl:text-6xl text-white leading-tight tracking-tight mb-6">
@@ -100,12 +96,6 @@ export default function LoginPage() {
 
         {/* Form Card - capture pointer events */}
         <div className="flex-1 lg:flex-none lg:absolute lg:right-[25%] lg:translate-x-1/2 lg:top-1/2 lg:-translate-y-1/2 flex items-center justify-center p-6 w-full lg:w-[600px] pointer-events-auto">
-          
-          {/* Mobile back link */}
-          <Link href="/" className="lg:hidden absolute top-8 left-8 flex items-center gap-2 text-ink-500 hover:text-navy-900 transition-colors font-medium">
-            <ArrowLeft className="size-4" />
-            Beranda
-          </Link>
           
           <div className="w-full relative z-10 bg-white border border-line rounded-2xl p-8 sm:p-12 shadow-2xl shadow-navy-900/10 text-left">
             <ShineBorder 
