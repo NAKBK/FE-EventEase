@@ -296,7 +296,7 @@ export default function EventManagementPage() {
                 Register <span className="italic font-light">Acara</span> baru
               </h2>
               <p className="text-gold-500 text-sm font-medium max-w-md">
-                Gratis selamanya untuk fitur dasar. Upgrade kapan saja kamu butuh lebih.
+                Daftarkan dan kelola event kamu tanpa batas, 100% gratis.
               </p>
             </div>
             
