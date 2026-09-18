@@ -18,7 +18,7 @@ import {
 } from "@/lib/api";
 import { claimLabel, formatDateTime, needLabels, verificationLabel, walkingLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
-import { MotionAside, MotionCardButton, MotionCardGrid, MotionForm } from "@/components/ui/motion-card";
+import { MotionCardButton, MotionForm, MotionSection } from "@/components/ui/motion-card";
 
 type Choice = VerificationValue | "";
 
@@ -34,10 +34,10 @@ const attributeKeys = [
 
 const emptyAnswers = Object.fromEntries(attributeKeys.map((key) => [key, ""])) as Record<keyof NeedProfile, Choice>;
 
-const options: Array<{ value: VerificationValue; short: string; icon: typeof Check }> = [
-  { value: "fulfilled", short: "Terpenuhi", icon: Check },
-  { value: "partially_fulfilled", short: "Sebagian", icon: Minus },
-  { value: "not_fulfilled", short: "Tidak", icon: X },
+const options: Array<{ value: VerificationValue; short: string; hint: string; icon: typeof Check; iconTone: string }> = [
+  { value: "fulfilled", short: "Terpenuhi", hint: "Sesuai yang dijanjikan.", icon: Check, iconTone: "text-green-500" },
+  { value: "partially_fulfilled", short: "Sebagian", hint: "Ada, tapi kurang dari janji.", icon: Minus, iconTone: "text-amber-500" },
+  { value: "not_fulfilled", short: "Tidak", hint: "Tidak ada atau tidak bisa dipakai.", icon: X, iconTone: "text-red-500" },
 ];
 
 interface VerifiableRequest extends AccessibilityRequest {
@@ -149,14 +149,36 @@ function VerificationContent() {
     <>
       <Navbar />
       <div className="min-h-screen pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
-        <div className="max-w-5xl mx-auto flex flex-col gap-4">
+        <div className="max-w-3xl mx-auto flex flex-col gap-4">
           <header>
             <h1 className="font-serif text-3xl text-navy-900 mb-1">Verifikasi Pengalaman</h1>
             <p className="text-sm text-ink-500">
               Verifikasi hanya untuk <strong>permintaan aksesibilitas yang kamu kirim</strong> dan sudah dikonfirmasi penyelenggara. Setelah
-              event selesai, bandingkan komitmen mereka dengan pengalaman aslimu. Hasilnya membentuk skor keandalan penyelenggara.
+              event selesai, bandingkan komitmen mereka dengan pengalaman aslimu.
             </p>
           </header>
+
+          <MotionSection className="bg-white border border-line rounded-[2rem] p-5 shadow-sm" lift={false}>
+            <h2 className="text-sm font-bold text-navy-900">Cara menilai</h2>
+            <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 items-stretch">
+              {options.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <li key={option.value} className="flex items-start gap-2.5 rounded-xl bg-bg-soft px-3 py-2.5 h-full">
+                    <Icon className={cn("mt-0.5 size-4 shrink-0", option.iconTone)} />
+                    <span className="text-xs text-ink-700">
+                      <strong className="block text-sm text-navy-900">{verificationLabel(option.value)}</strong>
+                      {option.hint}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-3 text-xs text-ink-500">
+              Nilai sesuai yang kamu alami sendiri. Jawabanmu ikut membentuk skor keandalan penyelenggara, yang merupakan indikator dari
+              umpan balik peserta, bukan sertifikasi independen.
+            </p>
+          </MotionSection>
 
           {result && (
             <div className="rounded-xl border border-green-500/20 bg-green-50 px-4 py-3 text-sm text-ink-700">
@@ -164,8 +186,7 @@ function VerificationContent() {
               <p className="mt-0.5">
                 {result.score !== null
                   ? `Indikator penyelenggara sekarang ${result.score} dari ${result.sampleCount} verifikasi.`
-                  : "Penyelenggara belum memiliki cukup verifikasi untuk skor."}{" "}
-                Ini indikator dari umpan balik peserta, bukan sertifikasi independen.
+                  : "Penyelenggara belum memiliki cukup verifikasi untuk skor."}
               </p>
             </div>
           )}
@@ -178,11 +199,10 @@ function VerificationContent() {
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
           ) : requests.length > 0 ? (
-            <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[0.75fr_1.25fr] gap-4 items-stretch">
-              <MotionAside className="bg-white border border-line rounded-[2rem] p-5 shadow-sm h-full flex flex-col gap-4" lift={false}>
-                <div>
-                <h2 className="text-base font-bold text-navy-900 mb-3">Dari permintaanmu</h2>
-                <div className="space-y-2">
+            <>
+              <MotionSection className="bg-white border border-line rounded-[2rem] p-5 shadow-sm" lift={false}>
+                <h2 className="text-sm font-bold text-navy-900 mb-3">Dari permintaanmu</h2>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 items-stretch">
                   {requests.map((request) => {
                     const ready = request.eventStatus === "completed";
                     return (
@@ -195,44 +215,25 @@ function VerificationContent() {
                           setError("");
                         }}
                         className={cn(
-                          "w-full text-left rounded-2xl border p-3 transition-colors",
+                          "h-full w-full text-left rounded-2xl border p-3 transition-colors",
                           requestId === request.id ? "border-navy-900 bg-navy-50" : "border-line bg-white",
                           ready ? "hover:bg-bg-soft" : "opacity-60 cursor-not-allowed",
                         )}
+                        lift={false}
                       >
-                        <p className="text-sm font-bold text-navy-900">{request.event_title}</p>
+                        <p className="text-sm font-bold text-navy-900 leading-snug">{request.event_title}</p>
                         <p className="text-xs text-ink-500 mt-0.5">
                           {ready
                             ? `Event selesai ${formatDateTime(request.eventEndsAt)}`
                             : request.eventStatus === "upcoming"
-                              ? "Event belum selesai. Verifikasi tersedia setelah event berakhir."
+                              ? "Belum selesai. Verifikasi tersedia setelah event berakhir."
                               : "Status event tidak dapat dimuat."}
                         </p>
                       </MotionCardButton>
                     );
                   })}
                 </div>
-                </div>
-
-                <div className="mt-auto rounded-2xl bg-bg-soft p-4 text-xs text-ink-700">
-                  <p className="text-[11px] font-bold text-ink-500 uppercase mb-2">Cara menilai</p>
-                  <ul className="flex flex-col gap-2">
-                    <li className="flex gap-2">
-                      <Check className="size-4 shrink-0 text-green-500" />
-                      <span><strong>Terpenuhi</strong>: sesuai yang dijanjikan.</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <Minus className="size-4 shrink-0 text-amber-500" />
-                      <span><strong>Sebagian</strong>: ada, tapi kurang dari janji.</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <X className="size-4 shrink-0 text-red-500" />
-                      <span><strong>Tidak</strong>: tidak ada atau tidak bisa dipakai.</span>
-                    </li>
-                  </ul>
-                  <p className="mt-3 text-ink-500">Nilai sesuai yang kamu alami sendiri. Jawabanmu ikut membentuk skor keandalan penyelenggara.</p>
-                </div>
-              </MotionAside>
+              </MotionSection>
 
               {selectedRequest ? (
                 <MotionForm onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-5 sm:p-6 shadow-sm flex flex-col gap-4" lift={false}>
@@ -258,7 +259,7 @@ function VerificationContent() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 auto-rows-fr">
+                  <div className="flex flex-col gap-2">
                     {attributeKeys.map((key) => {
                       const needed =
                         key === "walking_distance"
@@ -267,9 +268,12 @@ function VerificationContent() {
                             ? "Kamu perlukan"
                             : "Tidak wajib";
                       return (
-                        <fieldset key={key} className="rounded-2xl border border-line bg-bg p-3 flex flex-col gap-2 h-full">
+                        <fieldset
+                          key={key}
+                          className="rounded-2xl border border-line bg-bg px-3 py-2.5 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_17rem] sm:items-center"
+                        >
                           <legend className="sr-only">{needLabels[key]}</legend>
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-sm font-bold text-navy-900">{needLabels[key]}</p>
                             <div className="mt-1 flex flex-wrap gap-1.5">
                               <span className="rounded-full bg-white border border-line px-2 py-0.5 text-[11px] font-bold text-ink-700">{needed}</span>
@@ -278,7 +282,7 @@ function VerificationContent() {
                               </span>
                             </div>
                           </div>
-                          <div className="mt-auto grid grid-cols-3 gap-1.5">
+                          <div className="grid grid-cols-3 gap-1.5">
                             {options.map((option) => {
                               const Icon = option.icon;
                               return (
@@ -316,13 +320,13 @@ function VerificationContent() {
                   </div>
                 </MotionForm>
               ) : (
-                <div className="bg-white border border-line rounded-[2rem] p-10 text-center shadow-sm h-fit">
+                <div className="bg-white border border-line rounded-[2rem] p-10 text-center shadow-sm">
                   <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />
                   <h2 className="font-bold text-navy-900">Belum ada event yang selesai</h2>
                   <p className="text-sm text-ink-500 mt-1">Verifikasi bisa dikirim setelah event dari permintaanmu berakhir.</p>
                 </div>
               )}
-            </MotionCardGrid>
+            </>
           ) : (
             <div className="bg-white border border-line rounded-2xl p-10 text-center">
               <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />
