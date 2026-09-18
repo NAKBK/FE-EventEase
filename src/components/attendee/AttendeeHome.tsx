@@ -227,7 +227,7 @@ export function AttendeeHome() {
 
   return (
     <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
-      <PageBackdrop />
+      <PageBackdrop variant="home" />
       <div className="max-w-6xl mx-auto flex flex-col gap-5">
         <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-stretch">
           <MotionSection className="bg-navy-900 rounded-[2rem] p-6 sm:p-7 text-white border border-navy-800 shadow-xl overflow-hidden relative h-full flex flex-col justify-center">

@@ -103,13 +103,21 @@ export default function HistoryPage() {
     <>
       <Navbar />
       <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
-      <PageBackdrop />
+      <PageBackdrop variant="history" />
         <div className="max-w-5xl mx-auto flex flex-col gap-4">
-          <header>
-            <h1 className="font-serif text-3xl text-navy-900 mb-1">Riwayat Permintaan</h1>
-            <p className="text-sm text-ink-500">
-              Semua permintaan aksesibilitas yang kamu kirim, respons penyelenggara, dan langkah berikutnya.
-            </p>
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="font-serif text-3xl text-navy-900 mb-1">Riwayat Permintaan</h1>
+              <p className="text-sm text-ink-500">
+                Pantau dan kelola permintaan yang sudah kamu kirim: respons penyelenggara, konfirmasi, dan verifikasi setelah event.
+              </p>
+            </div>
+            <Link
+              href="/request"
+              className="shrink-0 rounded-xl border border-line bg-white px-4 py-2 text-center text-sm font-bold text-navy-900 hover:bg-bg-soft"
+            >
+              + Ajukan permintaan baru
+            </Link>
           </header>
 
           <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filter status">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Calendar, Loader2, MapPin } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
@@ -24,7 +25,7 @@ export default function RequestPage() {
   const [error, setError] = useState("");
 
   // Latest request status per event, preferring an active one, so the picker shows where each event stands.
-  const loadStatuses = useCallback(async () => {
+  const loadStatuses = useCallback(async (): Promise<Record<string, RequestStatus>> => {
     try {
       const data = await listRequests();
       const map: Record<string, RequestStatus> = {};
@@ -36,8 +37,10 @@ export default function RequestPage() {
           }
         });
       setStatuses(map);
+      return map;
     } catch {
       // The panel reports its own load errors; the picker simply shows no status.
+      return {};
     }
   }, []);
 
@@ -59,8 +62,8 @@ export default function RequestPage() {
       try {
         const data = await listEvents({ status: "upcoming", limit: 50, offset: 0 });
         setEvents(data.items);
-        setEventId(data.items[0]?.id ?? "");
-        await loadStatuses();
+        const map = await loadStatuses();
+        setEventId(data.items.find((event) => !ACTIVE.includes(map[event.id]))?.id ?? "");
       } catch (err: unknown) {
         setError(getErrorMessage(err, "Gagal mengambil daftar event."));
       } finally {
@@ -94,16 +97,27 @@ export default function RequestPage() {
   }, [eventId]);
 
   const currentStatus = statuses[eventId];
+  // Events that already have an active request are managed in Riwayat, so they are not offered here again
+  // (the one currently open stays listed so the picker does not jump after sending).
+  const available = events.filter((event) => !ACTIVE.includes(statuses[event.id]) || event.id === eventId);
+  const activeCount = events.filter((event) => ACTIVE.includes(statuses[event.id])).length;
 
   return (
     <>
       <Navbar />
       <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
-      <PageBackdrop />
+      <PageBackdrop variant="request" />
         <div className="max-w-5xl mx-auto flex flex-col gap-4">
           <header>
-            <h1 className="font-serif text-3xl text-navy-900 mb-1">Permintaan Aksesibilitas</h1>
-            <p className="text-sm text-ink-500">Pilih event, lalu minta konfirmasi dukungan aksesibilitas ke penyelenggara.</p>
+            <h1 className="font-serif text-3xl text-navy-900 mb-1">Ajukan Permintaan</h1>
+            <p className="text-sm text-ink-500">
+              Kirim permintaan baru untuk event yang belum kamu minta dukungannya. Untuk memantau, menerima, atau memverifikasi permintaan
+              yang sudah dikirim, buka{" "}
+              <Link href="/history" className="font-bold text-navy-700 underline">
+                Riwayat
+              </Link>
+              .
+            </p>
           </header>
 
           {error && (
@@ -114,9 +128,19 @@ export default function RequestPage() {
             <div className="py-16 flex justify-center">
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
-          ) : events.length === 0 ? (
+          ) : available.length === 0 ? (
             <div className="bg-white border border-line rounded-2xl p-10 text-center text-sm text-ink-500">
-              Belum ada event yang akan datang untuk diajukan permintaan.
+              {events.length === 0 ? (
+                "Belum ada event yang akan datang untuk diajukan permintaan."
+              ) : (
+                <>
+                  Semua event yang akan datang sudah punya permintaan aktif darimu. Pantau statusnya di{" "}
+                  <Link href="/history" className="font-bold text-navy-700 underline">
+                    Riwayat
+                  </Link>
+                  .
+                </>
+              )}
             </div>
           ) : (
             <MotionSection className="bg-white border border-line rounded-[2rem] p-5 sm:p-6 shadow-sm flex flex-col gap-5" lift={false}>
@@ -130,12 +154,22 @@ export default function RequestPage() {
                   onChange={(e) => setEventId(e.target.value)}
                   className="rounded-xl border border-line bg-bg px-4 py-2.5 text-sm font-semibold text-navy-900 focus:outline-none focus:border-navy-500"
                 >
-                  {events.map((event) => (
+                  {available.map((event) => (
                     <option key={event.id} value={event.id}>
-                      {event.title} · {formatDateTime(event.starts_at)} · {statuses[event.id] ? statusLabel(statuses[event.id]) : "Belum diminta"}
+                      {event.title} · {formatDateTime(event.starts_at)}
+                      {statuses[event.id] ? ` · ${statusLabel(statuses[event.id])}` : ""}
                     </option>
                   ))}
                 </select>
+                {activeCount > 0 && (
+                  <p className="text-xs text-ink-500">
+                    {activeCount} event lain sudah punya permintaan aktif dan dikelola di{" "}
+                    <Link href="/history" className="font-bold text-navy-700 underline">
+                      Riwayat
+                    </Link>
+                    .
+                  </p>
+                )}
               </div>
 
               {detailLoading || !detail || detail.id !== eventId ? (

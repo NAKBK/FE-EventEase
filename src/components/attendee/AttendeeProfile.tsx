@@ -118,7 +118,7 @@ export function AttendeeProfile() {
 
   return (
     <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
-      <PageBackdrop />
+      <PageBackdrop variant="profile" />
       <div className="max-w-5xl mx-auto flex flex-col gap-4">
         <MotionSection className="bg-white border border-line rounded-[2rem] p-6 shadow-sm hover:border-navy-100" lift={false}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

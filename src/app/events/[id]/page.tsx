@@ -127,7 +127,7 @@ export default function EventDetailPage() {
     <>
       <Navbar />
       <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
-      <PageBackdrop />
+      <PageBackdrop variant="detail" />
         <div className="max-w-5xl mx-auto flex flex-col gap-4">
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-ink-500 hover:text-navy-900 w-fit">
             <ArrowLeft className="size-4" />

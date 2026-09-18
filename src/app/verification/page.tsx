@@ -150,7 +150,7 @@ function VerificationContent() {
     <>
       <Navbar />
       <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
-      <PageBackdrop />
+      <PageBackdrop variant="verification" />
         <div className="max-w-5xl mx-auto flex flex-col gap-4">
           <header>
             <h1 className="font-serif text-3xl text-navy-900 mb-1">Verifikasi Pengalaman</h1>
