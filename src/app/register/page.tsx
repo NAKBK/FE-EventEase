@@ -9,7 +9,7 @@ import { Eye, EyeOff, Loader2, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { MotionButton } from "@/components/ui/motion-button";
-import { getErrorMessage, register, saveSession, type Role } from "@/lib/api";
+import { getErrorMessage, isApiError, register, saveSession, type Role } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -33,7 +33,16 @@ export default function RegisterPage() {
       // Redirect to home
       router.push(data.user.role === "organizer" ? "/dashboard" : "/");
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Email sudah digunakan atau data tidak valid"));
+      if (isApiError(err, "VALIDATION_ERROR")) {
+        const invalid = err.fields.map((field) => String(field.location[field.location.length - 1]));
+        if (invalid.includes("password")) setError("Password minimal 8 karakter.");
+        else if (invalid.includes("email")) setError("Format email tidak valid.");
+        else setError("Data belum lengkap atau tidak valid. Periksa kembali isian kamu.");
+      } else if (isApiError(err, "EMAIL_TAKEN")) {
+        setError("Email sudah terdaftar. Coba masuk atau gunakan email lain.");
+      } else {
+        setError(getErrorMessage(err, "Gagal membuat akun. Coba lagi."));
+      }
     } finally {
       setLoading(false);
     }
@@ -165,12 +174,12 @@ export default function RegisterPage() {
                     <input 
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder="Minimal 8 karakter"
                       className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition-all text-sm w-full pr-10"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      minLength={6}
+                      minLength={8}
                     />
                     <button 
                       type="button" 

@@ -1,13 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { InteractiveGridPattern } from "@/components/ui/interactive-grid-pattern";
 import { Eye, EyeOff, Loader2, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { demoLogin, getErrorMessage, login, saveSession, type Role } from "@/lib/api";
+
+function SessionExpiredNotice() {
+  const params = useSearchParams();
+  if (!params.get("expired")) return null;
+
+  return (
+    <div className="mb-6 p-4 bg-amber-50 border border-amber-500/20 text-ink-700 rounded-lg text-sm font-medium">
+      Sesi kamu berakhir. Silakan masuk kembali.
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -123,8 +134,12 @@ export default function LoginPage() {
                 <p className="text-ink-500 text-sm">Belum punya akun? <Link href="/register" className="text-gold-500 font-semibold hover:underline">Daftar di sini</Link></p>
               </div>
 
+              <Suspense fallback={null}>
+                <SessionExpiredNotice />
+              </Suspense>
+
               {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium">
+                <div className="mb-6 p-4 bg-red-50 border border-red-100 text-ink-700 rounded-lg text-sm font-medium">
                   {error}
                 </div>
               )}
