@@ -11,7 +11,7 @@
   --font-sans: var(--font-sans);
   --font-serif: var(--font-serif);
   --font-mono: var(--font-geist-mono);
-  
+
   --color-navy-900: var(--navy-900);
   --color-navy-800: var(--navy-800);
   --color-navy-700: var(--navy-700);
@@ -71,7 +71,16 @@
     from { transform: translateY(0); }
     to { transform: translateY(calc(-100% - var(--gap))); }
   }
-}
+
+  --animate-shine: shine var(--duration) infinite linear
+;
+  @keyframes shine {
+  0% {
+    background-position: 0% 0%;}
+  50% {
+    background-position: 100% 100%;}
+  to {
+    background-position: 0% 0%;}}}
 
 :root {
   --background: #FFFFFF;
