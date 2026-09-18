@@ -34,9 +34,13 @@ export default function LoginPage() {
         throw new Error(data.error?.message || "Terjadi kesalahan saat login");
       }
 
-      // Save token (usually localStorage or cookie)
+      // Save token and role
       if (data.token) {
         localStorage.setItem("token", data.token);
+      }
+      if (data.user) {
+        if (data.user.role) localStorage.setItem("role", data.user.role);
+        if (data.user.id) localStorage.setItem("user_id", data.user.id);
       }
 
       // Redirect to home
