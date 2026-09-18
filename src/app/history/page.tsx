@@ -4,8 +4,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, CheckCircle2, Clock, Loader2, MessageSquareText } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
-import { AccessibilityRequest, confirmRequest, getErrorMessage, listRequests, RequestStatus } from "@/lib/api";
-import { formatDateTime, requestTone, statusLabel } from "@/lib/attendee-ui";
+import { AccessibilityRequest, confirmRequest, getErrorMessage, isApiError, listRequests, RequestStatus } from "@/lib/api";
+import Link from "next/link";
+import { decisionLabel, formatDateTime, requestTone, statusLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
 
 const filters: Array<"all" | RequestStatus> = ["all", "pending", "responded", "confirmed", "closed", "verified"];
@@ -60,7 +61,12 @@ export default function HistoryPage() {
       setMessage(accepted ? "Respons penyelenggara berhasil dikonfirmasi." : "Permintaan ditutup.");
       fetchRequests();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Gagal memperbarui permintaan."));
+      if (isApiError(err, "INVALID_REQUEST_STATE")) {
+        setError("Status permintaan sudah berubah. Daftar diperbarui.");
+        fetchRequests();
+      } else {
+        setError(getErrorMessage(err, "Gagal memperbarui permintaan."));
+      }
     } finally {
       setActingId(null);
     }
@@ -119,6 +125,15 @@ export default function HistoryPage() {
                       </div>
                     </div>
 
+                    {request.status === "confirmed" && (
+                      <Link
+                        href="/verification"
+                        className="rounded-xl border border-line bg-white px-4 py-2.5 text-center text-sm font-bold text-navy-900 hover:bg-bg-soft"
+                      >
+                        Verifikasi setelah event
+                      </Link>
+                    )}
+
                     {request.status === "responded" && (
                       <div className="flex flex-col sm:flex-row gap-2 lg:justify-end">
                         <button
@@ -148,7 +163,7 @@ export default function HistoryPage() {
                       <p className="text-xs font-bold text-ink-500 uppercase mb-2">Respons organizer</p>
                       {request.response ? (
                         <div>
-                          <p className="text-sm font-bold text-navy-900">{request.response.decision.replaceAll("_", " ")}</p>
+                          <p className="text-sm font-bold text-navy-900">{decisionLabel(request.response.decision)}</p>
                           <p className="text-sm text-ink-500 mt-1">{request.response.note}</p>
                           <p className="text-xs text-ink-300 mt-2">{formatDateTime(request.response.responded_at)}</p>
                         </div>

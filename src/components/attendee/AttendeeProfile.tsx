@@ -62,7 +62,7 @@ export function AttendeeProfile() {
     try {
       const data = await saveNeeds(profile);
       setUpdatedAt(data.updated_at);
-      setMessage("Profil kebutuhan berhasil disimpan.");
+      setMessage("Profil kebutuhan berhasil disimpan. Skor kecocokan event akan mengikuti profil barumu.");
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Gagal menyimpan profil."));
     } finally {
@@ -109,7 +109,12 @@ export function AttendeeProfile() {
         <form onSubmit={handleSave} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-8">
           <div>
             <h2 className="text-xl font-bold text-navy-900">Kebutuhan aksesibilitas</h2>
-            <p className="text-sm text-ink-500 mt-1">Data ini dipakai untuk menghitung match score dan snapshot saat mengirim permintaan.</p>
+            <p className="text-sm text-ink-500 mt-1">Data ini dipakai untuk menghitung match score dan snapshot saat mengirim permintaan. Ini kebutuhan fungsional, bukan diagnosis medis.</p>
+            {!updatedAt && (
+              <p className="mt-3 rounded-xl border border-amber-500/20 bg-amber-50 px-4 py-3 text-sm text-ink-700">
+                Profilmu belum pernah disimpan. Nilai di bawah hanya contoh awal. Simpan agar skor kecocokan bisa dihitung.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
