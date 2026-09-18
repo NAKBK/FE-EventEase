@@ -132,24 +132,24 @@ export default function OrganizerDashboard() {
                 {/* Accessibility Score Card */}
                 <div className="bg-navy-900 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-navy-800">
                   {/* Decorative Soft White Hints */}
-                  <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-[80px] pointer-events-none"></div>
-                  <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-[80px] pointer-events-none"></div>
+                  <div className="absolute -top-16 -right-16 w-96 h-96 bg-white/20 rounded-full blur-[80px] pointer-events-none"></div>
+                  <div className="absolute -bottom-16 -left-16 w-96 h-96 bg-white/20 rounded-full blur-[80px] pointer-events-none"></div>
                   
                   <div className="relative z-10 flex-1">
-                    <div className="flex items-center gap-2 text-navy-100 mb-2">
-                      <ShieldCheck className="w-5 h-5 text-gold-400" />
-                      <span className="font-medium text-sm">Accessibility Score</span>
-                    </div>
+                    <h2 className="font-medium text-2xl font-bold text-white tracking-tight mb-2">
+                      Accessibility Score
+                    </h2>
                     <p className="text-navy-100 text-sm max-w-sm">
                       Berdasarkan 24 kriteria aksesibilitas venue
                     </p>
                   </div>
                   
-                  <div className="relative z-10 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center min-w-[160px]">
-                    <div className="text-4xl font-serif text-white font-bold mb-1">
-                      {score ?? 0}<span className="text-xl text-white/60">/100</span>
+                  <div className="relative z-10 text-left md:text-right min-w-[160px]">
+                    <div className="text-5xl font-serif text-white font-bold mb-1 flex items-baseline md:justify-end gap-1">
+                      <CountUp value={score ?? 0} className="text-white" />
+                      <span className="text-2xl text-white/60">/100</span>
                     </div>
-                    <div className="text-xs font-bold text-gold-400 uppercase tracking-wider">
+                    <div className="text-sm font-bold text-gold-400 uppercase tracking-wider">
                       {score === null ? "Belum Ada Nilai" : score >= 80 ? "Sangat Baik" : score >= 60 ? "Cukup" : "Perlu Peningkatan"}
                     </div>
                   </div>
