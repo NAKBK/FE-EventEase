@@ -9,6 +9,7 @@ import { AccessibilityRequest, confirmRequest, getErrorMessage, isApiError, list
 import { decisionLabel, formatDateTime, needSummary, requestTone, statusLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
 import { MotionArticle, MotionCardGrid } from "@/components/ui/motion-card";
+import { PageBackdrop } from "@/components/attendee/PageBackdrop";
 
 type Filter = "all" | RequestStatus;
 
@@ -101,7 +102,8 @@ export default function HistoryPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+      <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+      <PageBackdrop />
         <div className="max-w-5xl mx-auto flex flex-col gap-4">
           <header>
             <h1 className="font-serif text-3xl text-navy-900 mb-1">Riwayat Permintaan</h1>

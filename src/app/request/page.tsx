@@ -9,6 +9,7 @@ import { formatDateTime, requestTone, statusLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
 import { MotionSection } from "@/components/ui/motion-card";
 import { RequestPanel } from "@/components/attendee/RequestPanel";
+import { PageBackdrop } from "@/components/attendee/PageBackdrop";
 
 const ACTIVE: RequestStatus[] = ["pending", "responded", "confirmed"];
 
@@ -97,8 +98,9 @@ export default function RequestPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
-        <div className="max-w-3xl mx-auto flex flex-col gap-4">
+      <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+      <PageBackdrop />
+        <div className="max-w-5xl mx-auto flex flex-col gap-4">
           <header>
             <h1 className="font-serif text-3xl text-navy-900 mb-1">Permintaan Aksesibilitas</h1>
             <p className="text-sm text-ink-500">Pilih event, lalu minta konfirmasi dukungan aksesibilitas ke penyelenggara.</p>

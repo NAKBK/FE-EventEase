@@ -32,6 +32,7 @@ import type { MapEvent } from "@/components/attendee/EventMap";
 import { MotionArticle, MotionCard, MotionCardGrid, MotionSection } from "@/components/ui/motion-card";
 import { EventFilters, EventFilterState, emptyFilters, filtersToQuery } from "@/components/attendee/EventFilters";
 import { JourneyStepper } from "@/components/attendee/JourneyStepper";
+import { PageBackdrop } from "@/components/attendee/PageBackdrop";
 
 const EventMap = dynamic(() => import("@/components/attendee/EventMap"), {
   ssr: false,
@@ -225,7 +226,8 @@ export function AttendeeHome() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+    <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+      <PageBackdrop />
       <div className="max-w-6xl mx-auto flex flex-col gap-5">
         <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-stretch">
           <MotionSection className="bg-navy-900 rounded-[2rem] p-6 sm:p-7 text-white border border-navy-800 shadow-xl overflow-hidden relative h-full flex flex-col justify-center">
