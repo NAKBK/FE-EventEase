@@ -155,7 +155,6 @@ export default function EventDetailPage() {
                   <PhotoCarousel
                     images={event.media.map((item) => ({ id: item.id, url: item.url }))}
                     title={event.title}
-                    caption="Foto penyelenggara, bukan sertifikasi"
                   />
                 )}
                 <MotionSection className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-full" lift={false}>
