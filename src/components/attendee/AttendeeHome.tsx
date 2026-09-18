@@ -210,6 +210,11 @@ export function AttendeeHome() {
     })();
   }, [visibleEvents]);
 
+  const goToPage = (next: number) => {
+    setPage(Math.min(pageCount, Math.max(1, next)));
+    document.getElementById("daftar-event")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const focusCard = (id: string) => {
     const index = events.findIndex((event) => event.id === id);
     if (index >= 0) setPage(Math.floor(index / PAGE_SIZE) + 1);
@@ -349,7 +354,7 @@ export function AttendeeHome() {
           </ul>
         </section>
 
-        <section className="flex flex-col gap-3">
+        <section id="daftar-event" className="flex flex-col gap-3 scroll-mt-24">
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-navy-900">Event untuk kamu</h2>
@@ -374,7 +379,7 @@ export function AttendeeHome() {
             </div>
           ) : events.length > 0 ? (
             <>
-              <MotionCardGrid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-fr gap-4">
+              <MotionCardGrid key={page} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-fr gap-4">
                 {visibleEvents.map((event) => {
                   const tier = matchTier(event.match?.score);
                   return (
@@ -464,7 +469,7 @@ export function AttendeeHome() {
               {pageCount > 1 && (
                 <nav className="flex items-center justify-center gap-2" aria-label="Halaman event">
                   <button
-                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                    onClick={() => goToPage(page - 1)}
                     disabled={page === 1}
                     className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-bg-soft disabled:opacity-50"
                   >
@@ -474,7 +479,7 @@ export function AttendeeHome() {
                     {page} / {pageCount}
                   </span>
                   <button
-                    onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                    onClick={() => goToPage(page + 1)}
                     disabled={page === pageCount}
                     className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-bg-soft disabled:opacity-50"
                   >
