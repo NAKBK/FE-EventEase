@@ -1,12 +1,18 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Plus, Calendar, MapPin, Loader2, X, UploadCloud, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
 import Link from "next/link";
+
+const VenueMapPicker = dynamic(() => import("@/components/organizer/VenueMapPicker"), {
+  ssr: false,
+  loading: () => <div className="h-64 rounded-lg border border-line bg-bg-soft" />,
+});
 
 interface EventItem {
   id: string;
@@ -59,6 +65,8 @@ export default function EventManagementPage() {
       name: "",
       city: "Jakarta",
       address: "",
+      lat: null as number | null,
+      lng: null as number | null,
     },
     claim: {
       step_free_entrance: 1,
@@ -144,7 +152,10 @@ export default function EventManagementPage() {
           venue: {
             name: formData.venue.name,
             city: "Jakarta",
-            address: formData.venue.address
+            address: formData.venue.address,
+            ...(typeof formData.venue.lat === "number" && typeof formData.venue.lng === "number"
+              ? { lat: formData.venue.lat, lng: formData.venue.lng }
+              : {}),
           },
           claim: {
             step_free_entrance: Number(formData.claim.step_free_entrance),
@@ -537,6 +548,13 @@ export default function EventManagementPage() {
                       required
                     />
                   </div>
+
+                  <VenueMapPicker
+                    value={{ lat: formData.venue.lat, lng: formData.venue.lng }}
+                    onChange={(point) =>
+                      setFormData((current) => ({ ...current, venue: { ...current.venue, lat: point.lat, lng: point.lng } }))
+                    }
+                  />
                 </div>
 
                 {/* Section 3: Klaim Aksesibilitas */}
