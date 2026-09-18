@@ -88,7 +88,7 @@ export const Navbar = () => {
 
         {role === "organizer" && (
           <>
-            <Link href="/" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
+            <Link href="/dashboard" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
               <TextRoll center className="text-sm font-extrabold uppercase">DASHBOARD</TextRoll>
             </Link>
             <Link href="/event" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
