@@ -152,3 +152,17 @@ export function toLocalInputValue(iso?: string | null) {
 export function fromLocalInputValue(value: string) {
   return new Date(value).toISOString();
 }
+
+export function walkingLabel(value: string) {
+  const labels: Record<string, string> = { short: "Pendek", moderate: "Sedang", any: "Bebas" };
+  return labels[value] || value;
+}
+
+// Short human summary of a need profile / request snapshot: required facilities + walking tolerance.
+export function needSummary(profile: NeedProfile) {
+  const required = (Object.keys(needLabels) as Array<keyof NeedProfile>)
+    .filter((key) => key !== "walking_distance" && profile[key] === true)
+    .map((key) => needLabels[key]);
+
+  return [...required, `${needLabels.walking_distance}: ${walkingLabel(profile.walking_distance)}`];
+}

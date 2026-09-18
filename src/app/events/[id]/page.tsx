@@ -12,14 +12,13 @@ import {
   Loader2,
   MapPin,
   Minus,
-  Send,
   ShieldCheck,
   TriangleAlert,
   X,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import {
-  createRequest,
+  ApiError,
   EventDetail,
   getErrorMessage,
   getEvent,
@@ -28,23 +27,21 @@ import {
   isApiError,
   MatchResponse,
   OrganizerProfile,
-  ApiError,
 } from "@/lib/api";
 import {
   claimLabel,
   claimSourceLabel,
   claimTone,
   formatDateTime,
-  fromLocalInputValue,
   matchLabel,
   matchLabelTone,
   matchTier,
   needLabels,
   statusLabel,
-  toLocalInputValue,
 } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
 import { MotionCard, MotionSection } from "@/components/ui/motion-card";
+import { RequestPanel } from "@/components/attendee/RequestPanel";
 
 const labelIcon = {
   fulfilled: Check,
@@ -53,17 +50,14 @@ const labelIcon = {
   unknown: CircleHelp,
 } as const;
 
-function requestErrorMessage(err: unknown) {
-  if (isApiError(err, "ACTIVE_REQUEST_EXISTS")) {
-    return "Kamu sudah punya permintaan aktif untuk event ini. Lihat statusnya di Riwayat.";
-  }
-  if (isApiError(err, "EVENT_NOT_UPCOMING")) return "Event ini sudah selesai, permintaan tidak bisa dikirim.";
-  if (isApiError(err, "NEED_PROFILE_MISSING")) {
-    return "Simpan profil kebutuhan aksesibilitasmu dulu sebelum mengirim permintaan.";
-  }
-  if (isApiError(err, "VALIDATION_ERROR")) return "Estimasi tiba atau catatan belum valid. Catatan maksimal 500 karakter.";
-  return getErrorMessage(err, "Gagal mengirim permintaan.");
-}
+const facilityKeys = [
+  "step_free_entrance",
+  "elevator_or_ramp",
+  "accessible_restroom",
+  "accessible_seating",
+  "rest_area",
+  "parking_or_dropoff",
+] as const;
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -76,13 +70,6 @@ export default function EventDetailPage() {
   const [organizer, setOrganizer] = useState<OrganizerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const [arrival, setArrival] = useState(toLocalInputValue());
-  const [note, setNote] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [requestError, setRequestError] = useState("");
-  const [requestDone, setRequestDone] = useState(false);
-  const [requestNeedsProfile, setRequestNeedsProfile] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -110,8 +97,6 @@ export default function EventDetailPage() {
         if (cancelled) return;
 
         setEvent(detail);
-        setArrival(toLocalInputValue(detail.starts_at));
-        setNote(`Mohon konfirmasi dukungan aksesibilitas untuk ${detail.title}.`);
 
         if (matchResult.status === "fulfilled") setMatch(matchResult.value);
         else if (isApiError(matchResult.reason, "NEED_PROFILE_MISSING")) setNeedsProfile(true);
@@ -131,25 +116,6 @@ export default function EventDetailPage() {
     };
   }, [eventId, router]);
 
-  const submitRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!event) return;
-
-    setSubmitting(true);
-    setRequestError("");
-    setRequestNeedsProfile(false);
-
-    try {
-      await createRequest(event.id, { arrival_estimate: fromLocalInputValue(arrival), note });
-      setRequestDone(true);
-    } catch (err: unknown) {
-      setRequestNeedsProfile(isApiError(err, "NEED_PROFILE_MISSING"));
-      setRequestError(requestErrorMessage(err));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const tier = matchTier(match?.score);
   const reliability = organizer?.reliability ?? null;
   const reliabilityScore = reliability ? reliability.score : event?.organizer.reliability_score ?? null;
@@ -158,8 +124,8 @@ export default function EventDetailPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-bg-soft">
-        <div className="max-w-5xl mx-auto flex flex-col gap-6">
+      <div className="min-h-screen pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+        <div className="max-w-5xl mx-auto flex flex-col gap-4">
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-ink-500 hover:text-navy-900 w-fit">
             <ArrowLeft className="size-4" />
             Kembali ke daftar event
@@ -179,168 +145,151 @@ export default function EventDetailPage() {
             </div>
           ) : (
             <>
-              <MotionSection className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm" lift={false}>
-                <span className="inline-flex rounded-full bg-navy-50 px-3 py-1 text-xs font-bold text-navy-700 mb-3">
-                  {statusLabel(event.status)}
-                </span>
-                <h1 className="font-serif text-4xl text-navy-900 leading-tight">{event.title}</h1>
-                <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-6 text-sm text-ink-500">
-                  <span className="flex items-center gap-2">
-                    <Calendar className="size-4 text-ink-300" />
-                    {formatDateTime(event.starts_at)} – {formatDateTime(event.ends_at)}
+              <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-stretch">
+                <MotionSection className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-full" lift={false}>
+                  <span className="inline-flex rounded-full bg-navy-50 px-3 py-1 text-xs font-bold text-navy-700 mb-2">
+                    {statusLabel(event.status)}
                   </span>
-                  <span className="flex items-center gap-2">
-                    <MapPin className="size-4 text-ink-300" />
-                    {event.venue.name}, {event.venue.address || event.venue.city}
-                  </span>
-                </div>
-                {event.description && <p className="mt-4 text-sm text-ink-700 leading-relaxed">{event.description}</p>}
-              </MotionSection>
+                  <h1 className="font-serif text-3xl text-navy-900 leading-tight">{event.title}</h1>
+                  <div className="mt-3 flex flex-col gap-1.5 text-sm text-ink-500">
+                    <span className="flex items-center gap-2">
+                      <Calendar className="size-4 shrink-0 text-ink-300" />
+                      {formatDateTime(event.starts_at)} – {formatDateTime(event.ends_at)}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <MapPin className="size-4 shrink-0 text-ink-300" />
+                      {event.venue.name}, {event.venue.address || event.venue.city}
+                    </span>
+                  </div>
+                  {event.description && <p className="mt-3 text-sm text-ink-700 leading-relaxed">{event.description}</p>}
+                </MotionSection>
 
-              <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6">
-                <section className="flex flex-col gap-6">
-                  <MotionCard className="rounded-[2rem] bg-navy-900 text-white p-6 shadow-sm">
-                    <p className="text-sm text-navy-100 mb-2">Skor kecocokan untukmu</p>
-                    <div className="flex items-end gap-3">
-                      <p className="text-6xl font-bold">{match?.score ?? "-"}</p>
-                      <span className="mb-2 rounded-full bg-white px-3 py-1 text-xs font-bold text-navy-900">
-                        {tier.label}
-                      </span>
-                    </div>
-                    {match ? (
-                      <>
-                        <p className="text-sm text-navy-100 mt-4 leading-relaxed">{match.summary}</p>
-                        <p className="text-xs text-navy-100 mt-3">
-                          Bobot {match.weight_version} (sementara). Skor dihitung server dan bukan jaminan.
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-sm text-navy-100 mt-4 leading-relaxed">
-                        {needsProfile
-                          ? "Skor belum bisa dihitung karena profil kebutuhanmu belum disimpan."
-                          : "Skor kecocokan belum tersedia untuk event ini."}
-                      </p>
-                    )}
-                    {needsProfile && (
-                      <Link
-                        href="/profile"
-                        className="mt-4 inline-flex rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-navy-900 hover:bg-navy-50"
-                      >
-                        Isi profil kebutuhan
-                      </Link>
-                    )}
-                  </MotionCard>
-
-                  <MotionCard className="rounded-[2rem] bg-white border border-line p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="size-10 rounded-xl bg-navy-50 flex items-center justify-center">
-                        <ShieldCheck className="size-5 text-navy-700" />
-                      </div>
-                      <div>
-                        <h2 className="font-bold text-navy-900">{event.organizer.name}</h2>
-                        <p className="text-xs text-ink-500">Indikator umpan balik penyelenggara</p>
-                      </div>
-                    </div>
-                    {reliabilityScore !== null ? (
-                      <>
-                        <p className="text-3xl font-bold text-navy-900">{reliabilityScore}</p>
-                        <p className="text-xs text-ink-500 mt-1">
-                          Dari {reliabilityCount} verifikasi peserta
-                          {reliability ? ` (maks. ${reliability.window_size} terbaru)` : ""}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-sm font-bold text-ink-500">Belum ada verifikasi</p>
-                    )}
-                    <p className="text-xs text-ink-500 mt-3 leading-relaxed">
-                      Ini indikator dari verifikasi peserta, bukan sertifikasi independen.
-                    </p>
-                  </MotionCard>
-                </section>
-
-                <MotionSection className="rounded-[2rem] bg-white border border-line p-6 sm:p-8 shadow-sm" lift={false}>
-                  <h2 className="text-xl font-bold text-navy-900">Rincian kecocokan</h2>
-                  <p className="text-sm text-ink-500 mt-1 mb-5">
-                    Kebutuhanmu dibandingkan dengan klaim penyelenggara untuk tiap atribut.
-                  </p>
-
+                <MotionCard className="rounded-[2rem] bg-navy-900 text-white p-6 shadow-sm h-full flex flex-col justify-center">
+                  <p className="text-sm text-navy-100 mb-1">Skor kecocokan untukmu</p>
+                  <div className="flex items-end gap-3">
+                    <p className="text-5xl font-bold leading-none">{match?.score ?? "-"}</p>
+                    <span className="mb-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-navy-900">{tier.label}</span>
+                  </div>
                   {match ? (
-                    <ul className="flex flex-col gap-2">
-                      {match.breakdown.map((row) => {
+                    <p className="text-xs text-navy-100 mt-3 leading-relaxed">
+                      {match.summary} Bobot {match.weight_version} (sementara), dihitung server, bukan jaminan.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-navy-100 mt-3 leading-relaxed">
+                      {needsProfile
+                        ? "Skor belum bisa dihitung karena profil kebutuhanmu belum disimpan."
+                        : "Skor kecocokan belum tersedia untuk event ini."}
+                    </p>
+                  )}
+                  {needsProfile && (
+                    <Link
+                      href="/profile"
+                      className="mt-3 inline-flex w-fit rounded-xl bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-navy-50"
+                    >
+                      Isi profil kebutuhan
+                    </Link>
+                  )}
+                </MotionCard>
+              </div>
+
+              <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
+                <h2 className="text-lg font-bold text-navy-900">Rincian kecocokan</h2>
+                <p className="text-xs text-ink-500 mt-0.5 mb-4">Kebutuhanmu dibandingkan dengan klaim penyelenggara untuk tiap atribut.</p>
+
+                <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 auto-rows-fr">
+                  {match
+                    ? match.breakdown.map((row) => {
                         const Icon = labelIcon[row.label];
                         const isDistance = row.attribute === "walking_distance";
                         return (
-                          <li key={row.attribute} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-bg px-4 py-3">
+                          <li key={row.attribute} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-bg px-3 py-2">
                             <div className="min-w-0">
                               <p className="text-sm font-bold text-navy-900">{needLabels[row.attribute]}</p>
-                              <p className="text-xs text-ink-500 mt-0.5">
+                              <p className="text-xs text-ink-500">
                                 {row.required ? "Kamu perlukan" : "Tidak wajib"}
-                                {isDistance && event.claim.walking_distance_m !== null
-                                  ? ` · klaim ${event.claim.walking_distance_m} m`
-                                  : ""}
+                                {isDistance && event.claim.walking_distance_m !== null ? ` · klaim ${event.claim.walking_distance_m} m` : ""}
                               </p>
                             </div>
-                            <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold", matchLabelTone(row.label))}>
+                            <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", matchLabelTone(row.label))}>
                               <Icon className="size-3.5" />
                               {matchLabel(row.label)}
                             </span>
                           </li>
                         );
-                      })}
-                    </ul>
-                  ) : (
-                    <ul className="flex flex-col gap-2">
-                      {(
-                        [
-                          "step_free_entrance",
-                          "elevator_or_ramp",
-                          "accessible_restroom",
-                          "accessible_seating",
-                          "rest_area",
-                          "parking_or_dropoff",
-                        ] as const
-                      ).map((key) => (
-                        <li key={key} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-bg px-4 py-3">
-                          <p className="text-sm font-bold text-navy-900">{needLabels[key]}</p>
-                          <span className={cn("rounded-full px-3 py-1 text-xs font-bold", claimTone(event.claim[key]))}>
-                            {claimLabel(event.claim[key])}
+                      })
+                    : [
+                        ...facilityKeys.map((key) => (
+                          <li key={key} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-bg px-3 py-2">
+                            <p className="text-sm font-bold text-navy-900">{needLabels[key]}</p>
+                            <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", claimTone(event.claim[key]))}>
+                              {claimLabel(event.claim[key])}
+                            </span>
+                          </li>
+                        )),
+                        <li key="walking" className="flex items-center justify-between gap-3 rounded-xl border border-line bg-bg px-3 py-2">
+                          <p className="text-sm font-bold text-navy-900">{needLabels.walking_distance}</p>
+                          <span className="text-xs font-bold text-ink-500">
+                            {event.claim.walking_distance_m !== null ? `${event.claim.walking_distance_m} m` : "Belum diketahui"}
                           </span>
-                        </li>
-                      ))}
-                      <li className="flex items-center justify-between gap-3 rounded-xl border border-line bg-bg px-4 py-3">
-                        <p className="text-sm font-bold text-navy-900">{needLabels.walking_distance}</p>
-                        <span className="text-xs font-bold text-ink-500">
-                          {event.claim.walking_distance_m !== null ? `${event.claim.walking_distance_m} m` : "Belum diketahui"}
-                        </span>
-                      </li>
-                    </ul>
-                  )}
+                        </li>,
+                      ]}
+                </ul>
 
-                  {match && match.unknown_attributes.length > 0 && (
-                    <div className="mt-4 flex gap-3 rounded-xl border border-amber-500/20 bg-amber-50 px-4 py-3 text-sm text-ink-700">
-                      <TriangleAlert className="size-4 text-amber-500 shrink-0 mt-0.5" />
-                      <p>
-                        Informasi belum diketahui untuk:{" "}
-                        <strong>{match.unknown_attributes.map((key) => needLabels[key as keyof typeof needLabels] ?? key).join(", ")}</strong>
-                        . Data yang belum diketahui dihitung sebagai belum terpenuhi. Hubungi penyelenggara lewat permintaan aksesibilitas.
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mt-4 flex gap-3 rounded-xl bg-bg-soft px-4 py-3 text-xs text-ink-500">
-                    <Info className="size-4 text-ink-300 shrink-0 mt-0.5" />
+                {match && match.unknown_attributes.length > 0 && (
+                  <div className="mt-3 flex gap-3 rounded-xl border border-amber-500/20 bg-amber-50 px-4 py-2.5 text-sm text-ink-700">
+                    <TriangleAlert className="size-4 text-amber-500 shrink-0 mt-0.5" />
                     <p>
-                      Sumber: {claimSourceLabel(event.claim.source)}, dicatat {formatDateTime(event.claim.checked_at)}.
-                      Klaim ini bukan hasil audit independen.
+                      Belum diketahui:{" "}
+                      <strong>{match.unknown_attributes.map((key) => needLabels[key as keyof typeof needLabels] ?? key).join(", ")}</strong>.
+                      Dihitung sebagai belum terpenuhi. Tanyakan lewat permintaan aksesibilitas di bawah.
                     </p>
                   </div>
-                </MotionSection>
+                )}
+              </MotionSection>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                <MotionCard className="rounded-[2rem] bg-white border border-line p-5 shadow-sm h-full">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="size-9 rounded-xl bg-navy-50 flex items-center justify-center">
+                      <ShieldCheck className="size-5 text-navy-700" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-navy-900 leading-tight">{event.organizer.name}</h2>
+                      <p className="text-xs text-ink-500">Indikator umpan balik penyelenggara</p>
+                    </div>
+                  </div>
+                  {reliabilityScore !== null ? (
+                    <p className="text-sm text-ink-700">
+                      <span className="text-2xl font-bold text-navy-900 mr-2">{reliabilityScore}</span>
+                      dari {reliabilityCount} verifikasi peserta{reliability ? ` (maks. ${reliability.window_size} terbaru)` : ""}
+                    </p>
+                  ) : (
+                    <p className="text-sm font-bold text-ink-500">Belum ada verifikasi</p>
+                  )}
+                  <p className="text-xs text-ink-500 mt-2">Ini indikator dari verifikasi peserta, bukan sertifikasi independen.</p>
+                </MotionCard>
+
+                <MotionCard className="rounded-[2rem] bg-white border border-line p-5 shadow-sm h-full">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="size-9 rounded-xl bg-navy-50 flex items-center justify-center">
+                      <Info className="size-5 text-navy-700" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-navy-900 leading-tight">Sumber klaim</h2>
+                      <p className="text-xs text-ink-500">Asal data fasilitas di atas</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-ink-700">
+                    <strong>{claimSourceLabel(event.claim.source)}</strong>, dicatat {formatDateTime(event.claim.checked_at)}.
+                  </p>
+                  <p className="text-xs text-ink-500 mt-2">Klaim ini bukan hasil audit independen. Konfirmasi lewat permintaan aksesibilitas.</p>
+                </MotionCard>
               </div>
 
               {event.media.length > 0 && (
-                <MotionSection className="rounded-[2rem] bg-white border border-line p-6 sm:p-8 shadow-sm" lift={false}>
-                  <h2 className="text-xl font-bold text-navy-900">Foto bukti klaim</h2>
-                  <p className="text-sm text-ink-500 mt-1 mb-4">Foto dari penyelenggara sebagai bukti, bukan sertifikasi.</p>
+                <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
+                  <h2 className="text-lg font-bold text-navy-900">Foto bukti klaim</h2>
+                  <p className="text-xs text-ink-500 mt-0.5 mb-3">Foto dari penyelenggara sebagai bukti, bukan sertifikasi.</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {event.media.map((item, index) => (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -348,75 +297,21 @@ export default function EventDetailPage() {
                         key={item.id}
                         src={item.url}
                         alt={`Foto fasilitas ${event.title} ${index + 1}`}
-                        className="aspect-square w-full rounded-xl border border-line object-cover"
+                        className="aspect-[4/3] w-full rounded-xl border border-line object-cover"
                       />
                     ))}
                   </div>
                 </MotionSection>
               )}
 
-              {event.status === "upcoming" && (
-                <MotionSection className="rounded-[2rem] bg-white border border-line p-6 sm:p-8 shadow-sm" lift={false}>
-                  <h2 className="text-xl font-bold text-navy-900">Ajukan permintaan aksesibilitas</h2>
-                  <p className="text-sm text-ink-500 mt-1 mb-5">Permintaan menyertakan snapshot profil kebutuhanmu saat ini.</p>
-
-                  {requestDone ? (
-                    <div className="rounded-xl border border-green-500/20 bg-green-50 px-4 py-4 text-sm text-ink-700">
-                      <p className="font-bold">Permintaan berhasil dikirim.</p>
-                      <p className="mt-1">Penyelenggara akan merespons. Pantau statusnya di Riwayat.</p>
-                      <Link href="/history" className="inline-flex mt-3 rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-navy-800">
-                        Lihat riwayat
-                      </Link>
-                    </div>
-                  ) : (
-                    <form onSubmit={submitRequest} className="flex flex-col gap-4">
-                      {requestError && (
-                        <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">
-                          {requestError}{" "}
-                          {requestNeedsProfile && (
-                            <Link href="/profile" className="underline text-navy-700">
-                              Isi profil
-                            </Link>
-                          )}
-                        </div>
-                      )}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-2">
-                          <label htmlFor="arrival" className="text-sm font-semibold text-navy-900">Estimasi tiba</label>
-                          <input
-                            id="arrival"
-                            type="datetime-local"
-                            value={arrival}
-                            onChange={(e) => setArrival(e.target.value)}
-                            className="px-4 py-3 rounded-xl border border-line bg-bg text-sm focus:outline-none focus:border-navy-500"
-                            required
-                          />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <label htmlFor="note" className="text-sm font-semibold text-navy-900">Catatan</label>
-                          <textarea
-                            id="note"
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            maxLength={500}
-                            rows={3}
-                            className="px-4 py-3 rounded-xl border border-line bg-bg text-sm resize-none focus:outline-none focus:border-navy-500"
-                            required
-                          />
-                          <p className="text-xs text-ink-300 text-right">{note.length}/500</p>
-                        </div>
-                      </div>
-                      <button
-                        disabled={submitting}
-                        className="w-full sm:w-fit rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
-                      >
-                        {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                        Kirim permintaan
-                      </button>
-                    </form>
-                  )}
-                </MotionSection>
-              )}
+              <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
+                <h2 className="text-lg font-bold text-navy-900">Ajukan permintaan aksesibilitas</h2>
+                <p className="text-xs text-ink-500 mt-0.5 mb-4">
+                  Cara ikut: kirim permintaan, tunggu respons tertulis penyelenggara, lalu konfirmasi. EventEase tidak menjual tiket,
+                  ikuti ketentuan penyelenggara untuk tiket atau pendaftaran.
+                </p>
+                <RequestPanel event={event} />
+              </MotionSection>
             </>
           )}
         </div>
