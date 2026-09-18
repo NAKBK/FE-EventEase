@@ -232,7 +232,7 @@ export default function ProfilePage() {
                           "size-1.5 rounded-full",
                           evt.status === "upcoming" ? "bg-green-500" : "bg-gold-500"
                         )}></div>
-                        {evt.status === "upcoming" ? "Live" : "Selesai"}
+                        {evt.status === "upcoming" ? "Upcoming" : "Selesai"}
                       </div>
                     </div>
                   ))
