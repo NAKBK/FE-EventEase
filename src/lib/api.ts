@@ -316,6 +316,14 @@ export function listRequests(status?: RequestStatus) {
   return apiFetch<RequestListResponse>(`/api/requests?${params.toString()}`);
 }
 
+export function respondToRequest(requestId: string, payload: { decision: string, note: string }) {
+  return apiFetch<AccessibilityRequest>(`/api/requests/${requestId}/response`, {
+    method: "POST",
+    headers: jsonHeaders,
+    body: JSON.stringify(payload),
+  });
+}
+
 export function confirmRequest(requestId: string, accepted: boolean) {
   return apiFetch<AccessibilityRequest>(`/api/requests/${requestId}/confirm`, {
     method: "POST",

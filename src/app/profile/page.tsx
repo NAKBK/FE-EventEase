@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, CheckCircle2, FileText, Clock, Loader2 } from "lucide-react";
+import { MapPin, CheckCircle2, FileText, Clock, Loader2, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
 import { AttendeeProfile } from "@/components/attendee/AttendeeProfile";
 import { getErrorMessage } from "@/lib/api";
-import { MotionCard, MotionCardGrid } from "@/components/ui/motion-card";
+import Link from "next/link";
 
 interface OrganizerProfile {
   id: string;
@@ -164,14 +164,18 @@ export default function ProfilePage() {
   // Format Date
   const formatDate = (isoStr: string) => {
     const date = new Date(isoStr);
-    return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+    return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
-        <div className="max-w-6xl mx-auto flex flex-col gap-8">
+      <div className="relative min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30 overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-[10%] left-[5%] w-[600px] h-[600px] bg-gold-500/30 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+        <div className="absolute bottom-[10%] right-[5%] w-[600px] h-[600px] bg-navy-500/30 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+
+        <div className="relative z-10 max-w-6xl mx-auto flex flex-col gap-8">
 
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -184,30 +188,21 @@ export default function ProfilePage() {
           </div>
 
           {/* Top Row: Profile Card & History */}
-          <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
             {/* Left: Profile Card */}
-            <MotionCard className="col-span-1 bg-white rounded-3xl border border-line p-8 flex flex-col items-center justify-center shadow-sm hover:border-navy-200">
+            <div className="col-span-1 bg-white rounded-3xl border border-line p-8 flex flex-col items-center justify-center shadow-sm">
               <div className="relative mb-6">
                 <div className="size-24 rounded-full bg-navy-900 flex items-center justify-center text-white text-3xl font-bold shadow-md shadow-navy-900/20">
                   {profile?.name ? getInitials(profile.name) : "V"}
                 </div>
-                <div className="absolute bottom-0 right-0 size-7 bg-white rounded-full flex items-center justify-center p-1">
-                  <div className="w-full h-full bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="size-3 text-white" />
-                  </div>
-                </div>
               </div>
 
-              <h2 className="text-xl font-bold text-navy-900 mb-1 text-center">{profile?.name || "Nama Penyelenggara"}</h2>
-              <div className="flex items-center gap-1.5 text-ink-500 text-sm font-medium mb-8">
-                <MapPin className="size-4" />
-                Yogyakarta, Indonesia
-              </div>
+              <h2 className="text-xl font-bold text-navy-900 mb-8 text-center">{profile?.name || "Nama Penyelenggara"}</h2>
 
               <div className="w-full h-px bg-line mb-8"></div>
 
-              <div className="flex w-full items-center justify-between px-2">
+              <div className="flex w-full items-center justify-evenly px-2">
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-xl font-bold text-navy-900">{events?.total || 0}</span>
                   <span className="text-xs text-ink-500 font-medium">Event</span>
@@ -216,43 +211,45 @@ export default function ProfilePage() {
                   <span className="text-xl font-bold text-navy-900">{profile?.reliability?.score ?? "-"}</span>
                   <span className="text-xs text-ink-500 font-medium">Skor Akses</span>
                 </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-xl font-bold text-navy-900">4.8</span>
-                  <span className="text-xs text-ink-500 font-medium">Rating</span>
-                </div>
               </div>
-            </MotionCard>
+            </div>
 
             {/* Right: History */}
-            <MotionCard className="col-span-1 lg:col-span-2 bg-white rounded-3xl border border-line p-8 shadow-sm hover:border-navy-200" lift={false}>
-              <h2 className="text-xl font-bold text-navy-900 mb-1">History</h2>
+            <div className="col-span-1 lg:col-span-2 bg-white rounded-3xl border border-line p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-xl font-bold text-navy-900">History</h2>
+                <Link href="/event" className="text-sm font-bold text-navy-900 hover:text-gold-500 transition-colors">
+                  Lihat semua &gt;
+                </Link>
+              </div>
               <p className="text-ink-500 text-sm font-medium mb-6">Aktivitas terbaru penyelenggara.</p>
 
-              <div className="flex flex-col">
+              <div className="flex flex-col gap-4">
                 {events?.items && events.items.length > 0 ? (
-                  events.items.slice(0, 4).map((evt, index) => (
-                    <div key={evt.id} className={cn(
-                      "flex items-center gap-4 py-5",
-                      index !== Math.min(events.items.length, 4) - 1 ? "border-b border-line" : ""
-                    )}>
-                      <div className="size-10 rounded-xl bg-ink-50 flex items-center justify-center shrink-0">
-                        <FileText className="size-5 text-navy-600" />
+                  events.items.slice(0, 3).map((evt, index) => (
+                    <div key={evt.id} className="bg-white rounded-2xl border border-line p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-navy-200">
+                      <div className="relative z-10">
+                        <h4 className="text-base font-bold text-navy-900 mb-2">{evt.title}</h4>
+                        <div className="flex items-center gap-4 text-xs font-medium text-ink-500">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {formatDate(evt.starts_at)}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {evt.venue.name}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-navy-900 truncate mb-1">{evt.title}</h3>
-                        <p className="text-xs text-ink-500 font-medium">
-                          {formatDate(evt.starts_at)} • Status: {evt.status.charAt(0).toUpperCase() + evt.status.slice(1)}
-                        </p>
-                      </div>
-                      <div className={cn(
-                        "px-3 py-1 rounded-full text-xs font-bold shrink-0 flex items-center gap-1.5",
-                        evt.status === "upcoming" ? "bg-green-50 text-green-700" : "bg-gold-50 text-gold-700"
-                      )}>
-                        <div className={cn(
-                          "size-1.5 rounded-full",
-                          evt.status === "upcoming" ? "bg-green-500" : "bg-gold-500"
-                        )}></div>
-                        {evt.status === "upcoming" ? "Upcoming" : "Selesai"}
+                      <div className="relative z-10 shrink-0">
+                        <span className={cn(
+                          "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider block text-center",
+                          evt.status === "upcoming" 
+                            ? "bg-transparent border border-green-800 text-green-800" 
+                            : "bg-transparent border border-navy-900 text-navy-900"
+                        )}>
+                          {evt.status === "upcoming" ? "Upcoming" : "Selesai"}
+                        </span>
                       </div>
                     </div>
                   ))
@@ -266,12 +263,12 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-            </MotionCard>
+            </div>
 
-          </MotionCardGrid>
+          </div>
 
           {/* Bottom Row: How does it work (Horizontal Layout) */}
-          <MotionCard className="bg-white rounded-3xl border border-line p-8 shadow-sm mt-4 hover:border-navy-200" lift={false}>
+          <div className="bg-white rounded-3xl border border-line p-8 shadow-sm mt-4">
             <div className="mb-8">
               <h2 className="text-xl font-bold text-navy-900 mb-1">How does it work?</h2>
               <p className="text-ink-500 text-sm font-medium">Panduan singkat untuk penyelenggara baru.</p>
@@ -313,7 +310,7 @@ export default function ProfilePage() {
               </div>
 
             </div>
-          </MotionCard>
+          </div>
 
         </div>
       </div>

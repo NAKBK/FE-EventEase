@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import Link from "next/link";
 import { TestimonialSection } from "@/components/TestimonialSection";
 import { FAQSection } from "@/components/FAQSection";
 import { GlowingCards, GlowingCard } from "@/components/lightswind/glowing-cards";
@@ -41,6 +42,18 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center pt-28 pb-20 lg:pt-32 lg:pb-24 px-8 text-center overflow-hidden" id="hero">
+        {/* Background Image Overlay */}
+        <div 
+          className="absolute inset-0 -z-20 opacity-10 pointer-events-none"
+          style={{
+            backgroundImage: "url('/crowd.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat"
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-ink-50/80 -z-10 pointer-events-none" />
+
         {/* Background elements */}
         <DotPattern
           className={cn(
@@ -68,22 +81,24 @@ export default function Home() {
               className="mb-2"
               totalUsersText={8200}
               avatars={[
-                "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-                "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-                "https://i.pravatar.cc/150?u=a04258114e29026702d",
-                "https://i.pravatar.cc/150?u=a048581f4e29026701d",
+                "/ava1.jpeg",
+                "/ava2.jpeg",
+                "/ava3.jpeg",
+                "/ava4.jpeg",
               ]}
             />
           </div>
         </div>
 
-        <button className="group relative inline-flex h-14 items-center justify-center overflow-hidden rounded-full bg-navy-800 border border-navy-800 px-8 font-bold text-white shadow-lg hover:shadow-xl z-10 transition-colors">
-          <span className="relative z-10 flex items-center">
-            <span className="mr-2">Daftar sekarang</span>
-            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-          </span>
-          <div className="absolute inset-0 z-0 bg-navy-900 origin-left scale-x-0 transition-transform duration-700 ease-out group-hover:scale-x-100" />
-        </button>
+        <Link href="/register">
+          <button className="group relative inline-flex h-14 items-center justify-center overflow-hidden rounded-full bg-navy-800 border border-navy-800 px-8 font-bold text-white shadow-lg hover:shadow-xl z-10 transition-colors">
+            <span className="relative z-10 flex items-center">
+              <span className="mr-2">Daftar sekarang</span>
+              <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </span>
+            <div className="absolute inset-0 z-0 bg-navy-900 origin-left scale-x-0 transition-transform duration-700 ease-out group-hover:scale-x-100" />
+          </button>
+        </Link>
       </section>
 
       {/* Stats Section */}
@@ -337,15 +352,19 @@ export default function Home() {
               </p>
 
               <div className="flex flex-col sm:flex-row justify-center gap-4 md:gap-6">
-                <button className="group relative inline-flex h-12 md:h-14 items-center justify-center overflow-hidden rounded-full bg-white text-navy-900 font-bold px-8 shadow-md transition-colors">
-                  <span className="relative z-10">Daftar Gratis</span>
-                  <div className="absolute inset-0 z-0 bg-gold-400 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
-                </button>
+                <Link href="/register">
+                  <button className="group relative inline-flex h-12 md:h-14 items-center justify-center overflow-hidden rounded-full bg-white text-navy-900 font-bold px-8 shadow-md transition-colors w-full sm:w-auto">
+                    <span className="relative z-10">Daftar Gratis</span>
+                    <div className="absolute inset-0 z-0 bg-gold-400 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
+                  </button>
+                </Link>
                 
-                <button className="group relative inline-flex h-12 md:h-14 items-center justify-center overflow-hidden rounded-full bg-transparent border border-white/20 text-white font-medium px-8 transition-colors">
-                  <span className="relative z-10 transition-colors duration-300 group-hover:text-navy-900">Lihat FAQ</span>
-                  <div className="absolute inset-0 z-0 bg-white origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
-                </button>
+                <Link href="#faq">
+                  <button className="group relative inline-flex h-12 md:h-14 items-center justify-center overflow-hidden rounded-full bg-transparent border border-white/20 text-white font-medium px-8 transition-colors w-full sm:w-auto">
+                    <span className="relative z-10 transition-colors duration-300 group-hover:text-navy-900">Lihat FAQ</span>
+                    <div className="absolute inset-0 z-0 bg-white origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
+                  </button>
+                </Link>
               </div>
             </div>
           </div>

@@ -2,153 +2,313 @@
 
 import React, { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
-import { ArrowUpRight, Minus, Activity, ShieldCheck, Accessibility, CheckCircle2 } from "lucide-react";
-import { MotionCard, MotionCardGrid } from "@/components/ui/motion-card";
+import { GlowingCards, GlowingCard } from "@/components/lightswind/glowing-cards";
+import { CountUp } from "@/components/lightswind/count-up";
+import { ArrowUpRight, Minus, Activity, ShieldCheck, Accessibility, CheckCircle2, Loader2 } from "lucide-react";
+import { apiFetch, AccessibilityRequest, respondToRequest } from "@/lib/api";
+
+const needLabels: Record<string, string> = {
+  step_free_entrance: "Pintu Masuk Tanpa Tangga",
+  elevator_or_ramp: "Lift atau Ramp",
+  accessible_restroom: "Toilet Aksesibel",
+  accessible_seating: "Area Duduk Aksesibel",
+  rest_area: "Area Istirahat Tenang",
+  parking_or_dropoff: "Parkir / Drop-off",
+};
+
+const getFirstNeed = (snapshot: any) => {
+  if (!snapshot) return "Permintaan Aksesibilitas";
+  for (const key of Object.keys(needLabels)) {
+    if (snapshot[key] === true) {
+      return needLabels[key];
+    }
+  }
+  return "Permintaan Aksesibilitas";
+};
 
 export default function OrganizerDashboard() {
   const [userName, setUserName] = useState("Organizer");
+  const [loading, setLoading] = useState(true);
+
+  const [baruCount, setBaruCount] = useState<number>(0);
+  const [prosesCount, setProsesCount] = useState<number>(0);
+  const [aktifCount, setAktifCount] = useState<number>(0);
+  const [score, setScore] = useState<number | null>(null);
+  const [recentRequests, setRecentRequests] = useState<AccessibilityRequest[]>([]);
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedReq, setSelectedReq] = useState<AccessibilityRequest | null>(null);
+  const [responseForm, setResponseForm] = useState({ decision: "can_fulfill", note: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const organizerId = localStorage.getItem("organizer_id") || "org-1";
+      const [
+        resPending,
+        resResponded,
+        resUpcoming,
+        resOrg,
+        resRecent
+      ] = await Promise.all([
+        apiFetch<{ total: number }>("/api/requests?status=pending"),
+        apiFetch<{ total: number }>("/api/requests?status=responded"),
+        apiFetch<{ total: number }>("/api/events?mine=true&status=upcoming"),
+        apiFetch<{ reliability?: { score: number | null } }>(`/api/organizers/${organizerId}`),
+        apiFetch<{ items: AccessibilityRequest[] }>("/api/requests?limit=2")
+      ]);
+
+      setBaruCount(resPending.total);
+      setProsesCount(resResponded.total);
+      setAktifCount(resUpcoming.total);
+      setScore(resOrg.reliability?.score ?? null);
+      setRecentRequests(resRecent.items);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // try to get from localStorage or context if any
     const name = localStorage.getItem("name") || "Organizer";
     setUserName(name);
+    fetchData();
   }, []);
+
+  const handleOpenModal = (req: AccessibilityRequest) => {
+    setSelectedReq(req);
+    setResponseForm({ decision: "can_fulfill", note: "" });
+    setSubmitError("");
+    setIsModalOpen(true);
+  };
+
+  const handleRespond = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedReq) return;
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      await respondToRequest(selectedReq.id, responseForm);
+      setIsModalOpen(false);
+      await fetchData();
+    } catch (err: any) {
+      setSubmitError(err.message || "Gagal mengirim respons.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
-        <div className="max-w-6xl mx-auto flex flex-col gap-8">
-          
+      <div className="relative min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30 overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-navy-500/20 rounded-full blur-[120px] -translate-x-1/4 -translate-y-1/4 pointer-events-none -z-10"></div>
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gold-500/20 rounded-full blur-[120px] translate-x-1/4 translate-y-1/4 pointer-events-none -z-10"></div>
+
+        <div className="relative z-10 max-w-6xl mx-auto flex flex-col gap-8">
+
           {/* Header */}
           <div>
             <h1 className="font-serif text-4xl text-navy-900 mb-2 tracking-tight">Selamat datang, {userName}</h1>
-            <p className="text-ink-500 text-sm font-medium">Ringkasan event mu hari ini.</p>
+            <p className="text-ink-500 text-sm font-medium">Ringkasan acara mu hari ini.</p>
           </div>
 
-          {/* 3 Summary Cards */}
-          <MotionCardGrid className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Card 1 */}
-            <MotionCard className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-navy-200">
-              <div className="flex items-center gap-2 text-ink-500 mb-4 font-medium text-sm">
-                Baru
-              </div>
-              <div className="mb-4">
-                <span className="text-4xl font-bold text-navy-900">12</span>
-                <p className="text-ink-500 text-sm mt-1">New Request</p>
-              </div>
-              <div className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 w-fit px-2 py-1 rounded-md motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover/ee-card:translate-x-0.5">
-                <ArrowUpRight className="w-3.5 h-3.5" />
-                +3 minggu ini
-              </div>
-            </MotionCard>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="w-8 h-8 text-navy-500 animate-spin" />
+            </div>
+          ) : (
+            <>
+              {/* 3 Summary Cards */}
+              <GlowingCards gap="1rem" padding="0" enableHover={true}>
+                {/* Card 1 */}
+                <GlowingCard glowColor="#3b82f6" className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-center items-start text-left">
+                  <div className="text-ink-500 mb-2 font-medium text-sm">
+                    Acara Baru
+                  </div>
+                  <div>
+                    <CountUp value={baruCount} className="text-4xl font-bold text-navy-900" />
+                  </div>
+                </GlowingCard>
 
-            {/* Card 2 */}
-            <MotionCard className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-navy-200">
-              <div className="flex items-center gap-2 text-ink-500 mb-4 font-medium text-sm">
-                Proses
-              </div>
-              <div className="mb-4">
-                <span className="text-4xl font-bold text-navy-900">5</span>
-                <p className="text-ink-500 text-sm mt-1">Waiting for Response</p>
-              </div>
-              <div className="flex items-center gap-1 text-xs font-bold text-ink-500 bg-ink-100 w-fit px-2 py-1 rounded-md">
-                <Minus className="w-3.5 h-3.5" />
-                sama seperti kemarin
-              </div>
-            </MotionCard>
+                {/* Card 2 */}
+                <GlowingCard glowColor="#3b82f6" className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-center items-start text-left">
+                  <div className="text-ink-500 mb-2 font-medium text-sm">
+                    Acara Diproses
+                  </div>
+                  <div>
+                    <CountUp value={prosesCount} className="text-4xl font-bold text-navy-900" />
+                  </div>
+                </GlowingCard>
 
-            {/* Card 3 */}
-            <MotionCard className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:border-navy-200">
-              <div className="flex items-center gap-2 text-ink-500 mb-4 font-medium text-sm">
-                Aktif
-              </div>
-              <div className="mb-4">
-                <span className="text-4xl font-bold text-navy-900">8</span>
-                <p className="text-ink-500 text-sm mt-1">Active Event</p>
-              </div>
-              <div className="flex items-center gap-1 text-xs font-bold text-navy-600 bg-navy-50 w-fit px-2 py-1 rounded-md">
-                <Activity className="w-3.5 h-3.5" />
-                Live Now
-              </div>
-            </MotionCard>
-          </MotionCardGrid>
+                {/* Card 3 */}
+                <GlowingCard glowColor="#3b82f6" className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-center items-start text-left">
+                  <div className="text-ink-500 mb-2 font-medium text-sm">
+                    Acara Aktif
+                  </div>
+                  <div>
+                    <CountUp value={aktifCount} className="text-4xl font-bold text-navy-900" />
+                  </div>
+                </GlowingCard>
+              </GlowingCards>
 
-          <div className="flex flex-col gap-8">
-            
-            {/* Accessibility Score Card */}
-            <MotionCard className="bg-navy-900 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-navy-800">
-              {/* Decorative Soft White Hints */}
-              <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-[80px] pointer-events-none"></div>
-              <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-[80px] pointer-events-none"></div>
-              
-              <div className="relative z-10 flex-1">
-                <div className="flex items-center gap-2 text-navy-100 mb-2">
-                  <ShieldCheck className="w-5 h-5 text-gold-400" />
-                  <span className="font-medium text-sm">Accessibility Score</span>
-                </div>
-                <p className="text-navy-100 text-sm max-w-sm">
-                  Berdasarkan 24 kriteria aksesibilitas venue
-                </p>
-              </div>
-              
-              <div className="relative z-10 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center min-w-[160px]">
-                <div className="text-4xl font-serif text-white font-bold mb-1">
-                  86<span className="text-xl text-white/60">/100</span>
-                </div>
-                <div className="text-xs font-bold text-gold-400 uppercase tracking-wider">
-                  Sangat Baik
-                </div>
-              </div>
-            </MotionCard>
+              <div className="flex flex-col gap-8">
 
-            {/* Accessibility Requests List */}
-            <MotionCard className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm" lift={false}>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-navy-900">Permintaan Aksesibilitas Terkini</h3>
-                  <p className="text-sm text-ink-500 mt-1">Review kebutuhan peserta untuk event terdekat.</p>
-                </div>
-              </div>
+                {/* Accessibility Score Card */}
+                <div className="bg-navy-900 rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-navy-800">
+                  {/* Decorative Soft White Hints */}
+                  <div className="absolute -top-16 -right-16 w-96 h-96 bg-white/20 rounded-full blur-[80px] pointer-events-none"></div>
+                  <div className="absolute -bottom-16 -left-16 w-96 h-96 bg-white/20 rounded-full blur-[80px] pointer-events-none"></div>
 
-              <div className="space-y-4">
-                {/* Mock Request Item 1 */}
-                <div className="p-4 border border-line rounded-xl flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:border-navy-200 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-gold-50 rounded-full flex items-center justify-center shrink-0">
-                      <Accessibility className="w-5 h-5 text-gold-600" />
+                  <div className="relative z-10 flex-1">
+                    <h2 className="font-medium text-2xl font-bold text-white tracking-tight mb-2">
+                      Accessibility Score
+                    </h2>
+                    <p className="text-navy-100 text-sm max-w-sm">
+                      Berdasarkan 24 kriteria aksesibilitas venue
+                    </p>
+                  </div>
+
+                  <div className="relative z-10 text-left md:text-right min-w-[160px]">
+                    <div className="text-5xl font-serif text-white font-bold mb-1 flex items-baseline md:justify-end gap-1">
+                      <CountUp value={score ?? 0} className="text-white" />
+                      <span className="text-2xl text-white/60">/100</span>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-navy-900">Tersedia Jurubahasa Isyarat</h4>
-                      <p className="text-xs text-ink-500 mt-0.5">Diminta oleh 3 peserta.</p>
+                    <div className="text-sm font-bold text-gold-400 uppercase tracking-wider">
+                      {score === null ? "Belum Ada Nilai" : score >= 80 ? "Sangat Baik" : score >= 60 ? "Cukup" : "Perlu Peningkatan"}
                     </div>
                   </div>
-                  <button className="px-4 py-2 bg-navy-900 text-white rounded-lg text-xs font-bold hover:bg-navy-800 transition-colors w-full sm:w-auto">
-                    Tanggapi
-                  </button>
                 </div>
 
-                {/* Mock Request Item 2 */}
-                <div className="p-4 border border-line rounded-xl flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:border-navy-200 transition-colors opacity-70">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    </div>
+                {/* Accessibility Requests List */}
+                <div className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h4 className="text-sm font-bold text-navy-900">Area Kursi Roda Dekat Panggung</h4>
-                      <p className="text-xs text-ink-500 mt-0.5">Selesai untuk 5 peserta.</p>
+                      <h3 className="text-xl font-bold text-navy-900">Permintaan Aksesibilitas Terkini</h3>
+                      <p className="text-sm text-ink-500 mt-1">Review kebutuhan peserta untuk event terdekat.</p>
                     </div>
                   </div>
-                  <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded-md text-[10px] font-bold uppercase tracking-wider sm:ml-auto">
-                    Selesai
-                  </span>
+
+                  <div className="space-y-4">
+                    {recentRequests.length === 0 ? (
+                      <p className="text-sm text-ink-500 py-4 text-center border border-dashed border-line rounded-lg bg-ink-50">Belum ada permintaan masuk.</p>
+                    ) : (
+                      recentRequests.map((req) => (
+                        <div key={req.id} className={`p-4 border border-line rounded-lg flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:border-navy-200 transition-colors ${req.status !== 'pending' ? 'opacity-70' : ''}`}>
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${req.status === 'pending' ? 'bg-gold-50' : 'bg-transparent border border-green-800'}`}>
+                              {req.status === 'pending' ? (
+                                <Accessibility className="w-5 h-5 text-gold-600" />
+                              ) : (
+                                <CheckCircle2 className="w-5 h-5 text-green-800" />
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-navy-900">{getFirstNeed(req.needs_snapshot)}</h4>
+                              <p className="text-xs text-ink-500 mt-0.5">Event: {req.event_title}</p>
+                            </div>
+                          </div>
+                          {req.status === 'pending' ? (
+                            <button 
+                              onClick={() => handleOpenModal(req)}
+                              className="group relative px-4 py-2 bg-white border border-navy-900 text-navy-900 rounded-lg text-xs font-bold w-full sm:w-auto overflow-hidden"
+                            >
+                              <div className="absolute inset-0 bg-navy-900 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+                              <span className="relative z-10 flex items-center justify-center gap-1 group-hover:text-white transition-colors duration-300">
+                                Tanggapi <span className="opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300">&rarr;</span>
+                              </span>
+                            </button>
+                          ) : (
+                            <span className="px-3 py-1.5 bg-transparent border border-green-800 text-green-800 rounded-md text-[10px] font-bold uppercase tracking-wider sm:ml-auto">
+                              {req.status}
+                            </span>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
+
               </div>
-            </MotionCard>
-            
-          </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Response Modal */}
+      {isModalOpen && selectedReq && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-navy-900/40 backdrop-blur-sm"
+            onClick={() => !isSubmitting && setIsModalOpen(false)}
+          ></div>
+          <div className="relative bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-serif text-2xl font-bold text-navy-900">Tanggapi Permintaan</h3>
+                <p className="text-sm text-ink-500 mt-1">Kebutuhan: {getFirstNeed(selectedReq.needs_snapshot)}</p>
+              </div>
+              <button 
+                onClick={() => !isSubmitting && setIsModalOpen(false)}
+                className="size-8 rounded-full bg-ink-50 flex items-center justify-center text-ink-500 hover:bg-red-50 hover:text-red-500 transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+
+            {submitError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">
+                {submitError}
+              </div>
+            )}
+
+            <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
+              <form id="responseForm" onSubmit={handleRespond} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-navy-900 block">Keputusan *</label>
+                  <select 
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm"
+                    value={responseForm.decision}
+                    onChange={(e) => setResponseForm(prev => ({ ...prev, decision: e.target.value }))}
+                  >
+                    <option value="can_fulfill">Bisa Dipenuhi (Can Fulfill)</option>
+                    <option value="partially_fulfill">Bisa Sebagian (Partially Fulfill)</option>
+                    <option value="cannot_fulfill">Tidak Bisa Dipenuhi (Cannot Fulfill)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-navy-900 block">Catatan untuk Pengguna *</label>
+                  <textarea 
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm min-h-[100px]"
+                    placeholder="Contoh: Kami bisa menyediakan akses tanpa tangga di pintu utara."
+                    value={responseForm.note}
+                    onChange={(e) => setResponseForm(prev => ({ ...prev, note: e.target.value }))}
+                  ></textarea>
+                </div>
+              </form>
+            </div>
+            
+            <div className="pt-6 mt-6 border-t border-line">
+              <button 
+                type="submit"
+                form="responseForm"
+                disabled={isSubmitting}
+                className="w-full h-12 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : "Kirim Respons"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
