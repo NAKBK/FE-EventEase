@@ -8,6 +8,7 @@ import {
   Calendar,
   Check,
   CircleHelp,
+  ImageOff,
   Info,
   Loader2,
   MapPin,
@@ -286,29 +287,35 @@ export default function EventDetailPage() {
                 </MotionCard>
               </div>
 
-              {event.media.length > 0 && (
-                <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
-                  <h2 className="text-lg font-bold text-navy-900">Foto bukti klaim</h2>
-                  <p className="text-xs text-ink-500 mt-0.5 mb-3">Foto dari penyelenggara sebagai bukti, bukan sertifikasi.</p>
+              <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
+                <h2 className="text-lg font-bold text-navy-900">Foto bukti klaim</h2>
+                <p className="text-xs text-ink-500 mt-0.5 mb-3">Foto dari penyelenggara sebagai bukti, bukan sertifikasi.</p>
+                {event.media.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {event.media.map((item, index) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        key={item.id}
-                        src={item.url}
-                        alt={`Foto fasilitas ${event.title} ${index + 1}`}
-                        className="aspect-[4/3] w-full rounded-xl border border-line object-cover"
-                      />
+                      <a key={item.id} href={item.url} target="_blank" rel="noreferrer" aria-label={`Buka foto ${index + 1} ukuran penuh`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.url}
+                          alt={`Foto fasilitas ${event.title} ${index + 1}`}
+                          className="aspect-[4/3] w-full rounded-xl border border-line object-cover"
+                        />
+                      </a>
                     ))}
                   </div>
-                </MotionSection>
-              )}
+                ) : (
+                  <div className="flex items-center gap-3 rounded-xl bg-bg-soft px-4 py-4 text-sm text-ink-500">
+                    <ImageOff className="size-5 shrink-0 text-ink-300" />
+                    Penyelenggara belum mengunggah foto untuk event ini.
+                  </div>
+                )}
+              </MotionSection>
 
               <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
                 <h2 className="text-lg font-bold text-navy-900">Ajukan permintaan aksesibilitas</h2>
                 <p className="text-xs text-ink-500 mt-0.5 mb-4">
-                  Cara ikut: kirim permintaan, tunggu respons tertulis penyelenggara, lalu konfirmasi. EventEase tidak menjual tiket,
-                  ikuti ketentuan penyelenggara untuk tiket atau pendaftaran.
+                  Opsional: kamu tidak perlu menunggu konfirmasi untuk datang. Permintaan gunanya mendapat komitmen tertulis penyelenggara
+                  soal dukungan aksesibilitas, yang bisa kamu verifikasi setelah event. Tiket atau pendaftaran mengikuti ketentuan penyelenggara.
                 </p>
                 <RequestPanel event={event} />
               </MotionSection>

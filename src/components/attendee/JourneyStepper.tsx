@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 const steps = [
   "Isi profil kebutuhan",
   "Cek skor kecocokan",
-  "Ajukan permintaan",
+  "Ajukan permintaan (opsional)",
   "Penyelenggara merespons",
   "Kamu konfirmasi",
-  "Hadir & verifikasi",
+  "Verifikasi setelah event",
 ];
 
 // Index of the step the attendee is on. steps.length means every step is done.
@@ -23,7 +23,7 @@ export function journeyStep(status: RequestStatus | null, hasProfile: boolean) {
 
 export function JourneyStepper({ current, className }: { current: number; className?: string }) {
   return (
-    <ol className={cn("grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2", className)} aria-label="Alur mengikuti event">
+    <ol className={cn("grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2", className)} aria-label="Alur dukungan aksesibilitas">
       {steps.map((label, index) => {
         const done = index < current;
         const active = index === current;

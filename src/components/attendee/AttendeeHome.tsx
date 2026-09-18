@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock,
+  ImageOff,
   Loader2,
   MapPin,
   ShieldCheck,
@@ -19,6 +20,7 @@ import {
   EventListItem,
   getDashboard,
   getErrorMessage,
+  getEvent,
   getEventMatch,
   isApiError,
   listEvents,
@@ -67,6 +69,9 @@ export function AttendeeHome() {
   const [notice, setNotice] = useState("");
   const [needsProfile, setNeedsProfile] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  // Photos only exist on the detail endpoint (API-005), so covers are fetched lazily for visible cards.
+  const [covers, setCovers] = useState<Record<string, { url: string; count: number } | null>>({});
+  const requestedCovers = useRef<Set<string>>(new Set());
 
   const fetchData = useCallback(async (next: EventFilterState) => {
     try {
@@ -180,7 +185,30 @@ export function AttendeeHome() {
   );
 
   const pageCount = Math.max(1, Math.ceil(events.length / PAGE_SIZE));
-  const visibleEvents = events.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const visibleEvents = useMemo(
+    () => events.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [events, page],
+  );
+
+  useEffect(() => {
+    const missing = visibleEvents.filter((event) => !requestedCovers.current.has(event.id));
+    if (missing.length === 0) return;
+    missing.forEach((event) => requestedCovers.current.add(event.id));
+
+    (async () => {
+      const entries = await Promise.all(
+        missing.map(async (event): Promise<[string, { url: string; count: number } | null]> => {
+          try {
+            const detail = await getEvent(event.id);
+            return [event.id, detail.media[0] ? { url: detail.media[0].url, count: detail.media.length } : null];
+          } catch {
+            return [event.id, null];
+          }
+        }),
+      );
+      setCovers((current) => ({ ...current, ...Object.fromEntries(entries) }));
+    })();
+  }, [visibleEvents]);
 
   const focusCard = (id: string) => {
     const index = events.findIndex((event) => event.id === id);
@@ -234,16 +262,17 @@ export function AttendeeHome() {
 
         <details className="group rounded-2xl border border-line bg-white shadow-sm">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-navy-900">
-            Bagaimana cara ikut event?
+            Bagaimana alur di EventEase?
             <ChevronDown className="size-4 text-ink-500 transition-transform group-open:rotate-180" />
           </summary>
           <div className="flex flex-col gap-3 border-t border-line px-4 py-4">
             <JourneyStepper current={-1} />
             <p className="text-xs text-ink-500 leading-relaxed">
-              Buka detail event, cek skor dan rincian fasilitasnya, lalu kirim <strong>permintaan aksesibilitas</strong> ke penyelenggara.
-              Setelah mereka merespons, kamu <strong>konfirmasi</strong> untuk menyimpan komitmennya, dan setelah event selesai kamu{" "}
-              <strong>verifikasi</strong> pengalamanmu. EventEase mengurus dukungan aksesibilitas, bukan tiket. Untuk tiket atau
-              pendaftaran, ikuti ketentuan dari penyelenggara event.
+              EventEase membantu menilai <strong>kecocokan</strong> event dengan kebutuhanmu. Kamu tidak perlu menunggu konfirmasi untuk
+              datang: <strong>permintaan bersifat opsional</strong> dan gunanya untuk mendapat komitmen tertulis penyelenggara soal
+              dukungan aksesibilitas. Tiket atau pendaftaran mengikuti ketentuan penyelenggara, bukan EventEase. Setelah event selesai,
+              peserta yang punya komitmen terkonfirmasi bisa <strong>memverifikasi</strong> pengalamannya, dan hasilnya membentuk skor
+              keandalan penyelenggara.
             </p>
           </div>
         </details>
@@ -318,20 +347,6 @@ export function AttendeeHome() {
               Beberapa event di venue yang sama
             </li>
           </ul>
-          {!loading && unmapped.length > 0 && (
-            <p className="text-xs text-ink-500">
-              Belum punya koordinat (tidak tampil di peta):{" "}
-              {unmapped.map((event, index) => (
-                <React.Fragment key={event.id}>
-                  {index > 0 && ", "}
-                  <Link href={`/events/${event.id}`} className="font-bold text-navy-700 underline">
-                    {event.title}
-                  </Link>
-                </React.Fragment>
-              ))}
-              .
-            </p>
-          )}
         </section>
 
         <section className="flex flex-col gap-3">
@@ -373,6 +388,30 @@ export function AttendeeHome() {
                         highlightedId === event.id ? "border-navy-500" : "border-line",
                       )}
                     >
+                      <div className="relative -mx-4 -mt-4 h-28 overflow-hidden rounded-t-2xl bg-bg-soft">
+                        {covers[event.id] ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={covers[event.id]!.url}
+                            alt={`Foto fasilitas ${event.title}`}
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center gap-1 text-ink-300">
+                            <ImageOff className="size-5" />
+                            <span className="text-[11px] font-bold">
+                              {event.id in covers ? "Belum ada foto" : "Memuat foto"}
+                            </span>
+                          </div>
+                        )}
+                        {covers[event.id] && covers[event.id]!.count > 1 && (
+                          <span className="absolute bottom-2 right-2 rounded-full bg-navy-900 px-2 py-0.5 text-[10px] font-bold text-white">
+                            {covers[event.id]!.count} foto
+                          </span>
+                        )}
+                      </div>
+
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-[11px] font-bold text-navy-700 uppercase mb-1">{statusLabel(event.status)}</p>
