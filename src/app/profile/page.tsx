@@ -169,8 +169,12 @@ export default function ProfilePage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
-        <div className="max-w-6xl mx-auto flex flex-col gap-8">
+      <div className="relative min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30 overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-[10%] left-[5%] w-[600px] h-[600px] bg-gold-500/30 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+        <div className="absolute bottom-[10%] right-[5%] w-[600px] h-[600px] bg-navy-500/30 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+
+        <div className="relative z-10 max-w-6xl mx-auto flex flex-col gap-8">
 
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
