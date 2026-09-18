@@ -22,45 +22,75 @@ interface EventMapProps {
   onSelect?: (id: string) => void;
 }
 
-function pinIcon(score: number | null, highlighted: boolean) {
+interface Place {
+  key: string;
+  lat: number;
+  lng: number;
+  venueName: string;
+  events: MapEvent[];
+  bestScore: number | null;
+}
+
+// Events at the same venue share identical coordinates, so their pins would sit on top of
+// each other. Group them into one pin per place instead of hiding all but one.
+function groupByPlace(events: MapEvent[]): Place[] {
+  const places = new Map<string, Place>();
+
+  for (const event of events) {
+    const key = `${event.lat.toFixed(5)},${event.lng.toFixed(5)}`;
+    const place = places.get(key);
+    if (place) {
+      place.events.push(event);
+      if (event.score !== null && (place.bestScore === null || event.score > place.bestScore)) {
+        place.bestScore = event.score;
+      }
+    } else {
+      places.set(key, { key, lat: event.lat, lng: event.lng, venueName: event.venueName, events: [event], bestScore: event.score });
+    }
+  }
+
+  return [...places.values()];
+}
+
+function pinIcon(score: number | null, count: number, highlighted: boolean) {
   const tier = matchTier(score);
   const size = highlighted ? 44 : 36;
   const textColor = tier.key === "none" ? "var(--ink-900)" : "#FFFFFF";
   const ring = highlighted ? "0 0 0 3px var(--navy-900)," : "";
+  const badge =
+    count > 1
+      ? `<span style="position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9999px;background:var(--navy-900);color:#FFFFFF;border:2px solid #FFFFFF;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${count}</span>`
+      : "";
 
   return L.divIcon({
     className: "",
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     popupAnchor: [0, -size / 2],
-    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${tier.color};color:${textColor};border:3px solid #FFFFFF;box-shadow:${ring} var(--shadow-md);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${highlighted ? 14 : 12}px;font-family:var(--font-sans)">${score ?? "–"}</div>`,
+    html: `<div style="position:relative;width:${size}px;height:${size}px"><div style="width:${size}px;height:${size}px;border-radius:9999px;background:${tier.color};color:${textColor};border:3px solid #FFFFFF;box-shadow:${ring} var(--shadow-md);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${highlighted ? 14 : 12}px;font-family:var(--font-sans)">${score ?? "–"}</div>${badge}</div>`,
   });
 }
 
-function FitBounds({ events }: { events: MapEvent[] }) {
+function FitBounds({ places }: { places: Place[] }) {
   const map = useMap();
 
   useEffect(() => {
-    if (events.length === 0) return;
-    if (events.length === 1) {
-      map.setView([events[0].lat, events[0].lng], 14);
+    if (places.length === 0) return;
+    if (places.length === 1) {
+      map.setView([places[0].lat, places[0].lng], 14);
       return;
     }
     map.fitBounds(
-      L.latLngBounds(events.map((event) => [event.lat, event.lng] as [number, number])),
+      L.latLngBounds(places.map((place) => [place.lat, place.lng] as [number, number])),
       { padding: [48, 48], maxZoom: 15 },
     );
-  }, [events, map]);
+  }, [places, map]);
 
   return null;
 }
 
 export default function EventMap({ events, highlightedId, onSelect }: EventMapProps) {
-  const icons = useMemo(
-    () =>
-      new Map(events.map((event) => [event.id, pinIcon(event.score, event.id === highlightedId)])),
-    [events, highlightedId],
-  );
+  const places = useMemo(() => groupByPlace(events), [events]);
 
   return (
     <MapContainer
@@ -76,28 +106,38 @@ export default function EventMap({ events, highlightedId, onSelect }: EventMapPr
         className="eventease-tiles"
         maxZoom={19}
       />
-      <FitBounds events={events} />
-      {events.map((event) => {
-        const tier = matchTier(event.score);
+      <FitBounds places={places} />
+      {places.map((place) => {
+        const highlighted = place.events.some((event) => event.id === highlightedId);
         return (
           <Marker
-            key={event.id}
-            position={[event.lat, event.lng]}
-            icon={icons.get(event.id)}
-            zIndexOffset={event.id === highlightedId ? 1000 : 0}
-            eventHandlers={{ click: () => onSelect?.(event.id) }}
-            title={`${event.title} — ${event.score ?? "belum ada"} skor`}
+            key={place.key}
+            position={[place.lat, place.lng]}
+            icon={pinIcon(place.bestScore, place.events.length, highlighted)}
+            zIndexOffset={highlighted ? 1000 : 0}
+            eventHandlers={{ click: () => onSelect?.(place.events[0].id) }}
+            title={`${place.venueName} — ${place.events.length} event`}
           >
             <Popup>
-              <div className="flex min-w-44 flex-col gap-1.5">
-                <p className="text-sm font-bold text-navy-900 leading-snug">{event.title}</p>
-                <p className="text-xs text-ink-500">{event.venueName}</p>
-                <p className="text-xs font-bold text-ink-700">
-                  {event.score !== null ? `Skor ${event.score} · ${tier.label}` : tier.label}
+              <div className="flex min-w-52 flex-col gap-2">
+                <p className="text-xs font-bold text-ink-500 uppercase">
+                  {place.venueName} · {place.events.length} event
                 </p>
-                <Link href={`/events/${event.id}`} className="text-xs font-bold text-navy-700 underline">
-                  Lihat detail
-                </Link>
+                <ul className="flex flex-col gap-2">
+                  {place.events.map((event) => {
+                    const tier = matchTier(event.score);
+                    return (
+                      <li key={event.id} className="flex items-start justify-between gap-3">
+                        <Link href={`/events/${event.id}`} className="text-sm font-bold text-navy-900 leading-snug underline">
+                          {event.title}
+                        </Link>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${tier.tone}`}>
+                          {event.score ?? "–"}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             </Popup>
           </Marker>
