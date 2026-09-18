@@ -41,6 +41,18 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center pt-28 pb-20 lg:pt-32 lg:pb-24 px-8 text-center overflow-hidden" id="hero">
+        {/* Background Image Overlay */}
+        <div 
+          className="absolute inset-0 -z-20 opacity-10 pointer-events-none"
+          style={{
+            backgroundImage: "url('/crowd.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat"
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-ink-50/80 -z-10 pointer-events-none" />
+
         {/* Background elements */}
         <DotPattern
           className={cn(
@@ -68,10 +80,10 @@ export default function Home() {
               className="mb-2"
               totalUsersText={8200}
               avatars={[
-                "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-                "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-                "https://i.pravatar.cc/150?u=a04258114e29026702d",
-                "https://i.pravatar.cc/150?u=a048581f4e29026701d",
+                "/ava1.jpeg",
+                "/ava2.jpeg",
+                "/ava3.jpeg",
+                "/ava4.jpeg",
               ]}
             />
           </div>
