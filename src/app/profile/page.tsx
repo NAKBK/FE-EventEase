@@ -179,7 +179,7 @@ export default function ProfilePage() {
               </div>
             </div>
             
-            <h2 className="text-xl font-extrabold text-navy-900 mb-1 text-center">{profile?.name || "Nama Venue"}</h2>
+            <h2 className="text-xl font-bold text-navy-900 mb-1 text-center">{profile?.name || "Nama Venue"}</h2>
             <div className="flex items-center gap-1.5 text-ink-500 text-sm font-medium mb-8">
               <MapPin className="size-4" />
               Yogyakarta, Indonesia
@@ -189,15 +189,15 @@ export default function ProfilePage() {
 
             <div className="flex w-full items-center justify-between px-2">
               <div className="flex flex-col items-center gap-1">
-                <span className="text-xl font-extrabold text-navy-900">{events?.total || 0}</span>
+                <span className="text-xl font-bold text-navy-900">{events?.total || 0}</span>
                 <span className="text-xs text-ink-500 font-medium">Event</span>
               </div>
               <div className="flex flex-col items-center gap-1">
-                <span className="text-xl font-extrabold text-navy-900">{profile?.reliability?.score ?? "-"}</span>
+                <span className="text-xl font-bold text-navy-900">{profile?.reliability?.score ?? "-"}</span>
                 <span className="text-xs text-ink-500 font-medium">Skor Akses</span>
               </div>
               <div className="flex flex-col items-center gap-1">
-                <span className="text-xl font-extrabold text-navy-900">4.8</span>
+                <span className="text-xl font-bold text-navy-900">4.8</span>
                 <span className="text-xs text-ink-500 font-medium">Rating</span>
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function ProfilePage() {
 
           {/* Right: History */}
           <div className="col-span-1 lg:col-span-2 bg-white rounded-3xl border border-line p-8 shadow-sm">
-            <h2 className="text-xl font-extrabold text-navy-900 mb-1">History</h2>
+            <h2 className="text-xl font-bold text-navy-900 mb-1">History</h2>
             <p className="text-ink-500 text-sm font-medium mb-6">Aktivitas terbaru venue-mu.</p>
 
             <div className="flex flex-col">
@@ -253,7 +253,7 @@ export default function ProfilePage() {
         {/* Bottom Row: How does it work (Horizontal Layout) */}
         <div className="bg-white rounded-3xl border border-line p-8 shadow-sm mt-4">
           <div className="mb-8">
-            <h2 className="text-xl font-extrabold text-navy-900 mb-1">How does it work?</h2>
+            <h2 className="text-xl font-bold text-navy-900 mb-1">How does it work?</h2>
             <p className="text-ink-500 text-sm font-medium">Panduan singkat untuk venue partner baru.</p>
           </div>
 
