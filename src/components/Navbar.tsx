@@ -10,7 +10,7 @@ export const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-bg/80 backdrop-blur-md border-b border-line">
       {/* Left side: Logo */}
       <div className="flex items-center gap-2">
-        <Link href="/" className="font-serif text-3xl font-extrabold tracking-tight flex items-center gap-2">
+        <Link href="/" className="font-serif text-3xl font-medium tracking-tight flex items-center gap-2">
           <img src="/logo.png" alt="EventEase Logo" className="w-8 h-8 object-contain" />
           <div>
             <span className="text-navy-900">Event</span>
@@ -22,13 +22,13 @@ export const Navbar = () => {
       {/* Middle: Links */}
       <div className="hidden md:flex items-center gap-8">
         <Link href="#fitur" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
-          <TextRoll center className="text-sm font-extrabold normal-case">Fitur</TextRoll>
+          <TextRoll center className="text-sm font-extrabold normal-case">FITUR</TextRoll>
         </Link>
         <Link href="#aksesibilitas" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
-          <TextRoll center className="text-sm font-extrabold normal-case">Aksesibilitas</TextRoll>
+          <TextRoll center className="text-sm font-extrabold normal-case">AKSESIBILITAS</TextRoll>
         </Link>
         <Link href="#cara-kerja" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
-          <TextRoll center className="text-sm font-extrabold normal-case">Cara Kerja</TextRoll>
+          <TextRoll center className="text-sm font-extrabold normal-case">CARA KERJA</TextRoll>
         </Link>
         <Link href="#faq" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
           <TextRoll center className="text-sm font-extrabold normal-case">FAQ</TextRoll>
@@ -37,7 +37,7 @@ export const Navbar = () => {
 
       {/* Right: Auth Buttons */}
       <div className="flex items-center gap-4">
-        <Link href="/login" className="text-sm font-extrabold text-navy-800 hover:text-navy-700 transition-colors">
+        <Link href="/login" className="text-sm font-extrabold text-navy-800 hover:text-gold-500 transition-colors">
           Masuk
         </Link>
         <Link href="/register">

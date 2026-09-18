@@ -99,7 +99,7 @@ const TextRoll: React.FC<{
               className="inline-block"
               key={i}
             >
-              {l}
+              {l === " " ? "\u00A0" : l}
             </motion.span>
           );
         })}
@@ -127,7 +127,7 @@ const TextRoll: React.FC<{
               className="inline-block"
               key={i}
             >
-              {l}
+              {l === " " ? "\u00A0" : l}
             </motion.span>
           );
         })}
