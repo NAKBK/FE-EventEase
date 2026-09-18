@@ -342,7 +342,7 @@ function VerificationContent() {
                   Cari event
                 </Link>
                 <Link href="/history" className="rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-bg-soft">
-                  Lihat riwayat permintaan
+                  Lihat permintaanmu
                 </Link>
               </div>
             </div>

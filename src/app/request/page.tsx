@@ -97,7 +97,7 @@ export default function RequestPage() {
   }, [eventId]);
 
   const currentStatus = statuses[eventId];
-  // Events that already have an active request are managed in Riwayat, so they are not offered here again
+  // Events that already have an active request are managed in Permintaan, so they are not offered here again
   // (the one currently open stays listed so the picker does not jump after sending).
   const available = events.filter((event) => !ACTIVE.includes(statuses[event.id]) || event.id === eventId);
   const activeCount = events.filter((event) => ACTIVE.includes(statuses[event.id])).length;
@@ -114,7 +114,7 @@ export default function RequestPage() {
               Kirim permintaan baru untuk event yang belum kamu minta dukungannya. Untuk memantau, menerima, atau memverifikasi permintaan
               yang sudah dikirim, buka{" "}
               <Link href="/history" className="font-bold text-navy-700 underline">
-                Riwayat
+                Permintaan
               </Link>
               .
             </p>
@@ -136,7 +136,7 @@ export default function RequestPage() {
                 <>
                   Semua event yang akan datang sudah punya permintaan aktif darimu. Pantau statusnya di{" "}
                   <Link href="/history" className="font-bold text-navy-700 underline">
-                    Riwayat
+                    Permintaan
                   </Link>
                   .
                 </>
@@ -165,7 +165,7 @@ export default function RequestPage() {
                   <p className="text-xs text-ink-500">
                     {activeCount} event lain sudah punya permintaan aktif dan dikelola di{" "}
                     <Link href="/history" className="font-bold text-navy-700 underline">
-                      Riwayat
+                      Permintaan
                     </Link>
                     .
                   </p>
