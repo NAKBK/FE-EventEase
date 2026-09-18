@@ -1,13 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { InteractiveGridPattern } from "@/components/ui/interactive-grid-pattern";
 import { Eye, EyeOff, Loader2, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { demoLogin, getErrorMessage, login, saveSession, type Role } from "@/lib/api";
+import { getErrorMessage, login, saveSession } from "@/lib/api";
+
+function SessionExpiredNotice() {
+  const params = useSearchParams();
+  if (!params.get("expired")) return null;
+
+  return (
+    <div className="mb-6 p-4 bg-amber-50 border border-amber-500/20 text-ink-700 rounded-lg text-sm font-medium">
+      Sesi kamu berakhir. Silakan masuk kembali.
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,7 +26,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState<Role | null>(null);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,21 +43,6 @@ export default function LoginPage() {
       setError(getErrorMessage(err, "Email atau password salah"));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async (account: Role) => {
-    setError("");
-    setDemoLoading(account);
-
-    try {
-      const data = await demoLogin(account);
-      saveSession(data);
-      router.push(data.user.role === "organizer" ? "/dashboard" : "/");
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Gagal masuk dengan akun demo"));
-    } finally {
-      setDemoLoading(null);
     }
   };
 
@@ -123,8 +118,12 @@ export default function LoginPage() {
                 <p className="text-ink-500 text-sm">Belum punya akun? <Link href="/register" className="text-gold-500 font-semibold hover:underline">Daftar di sini</Link></p>
               </div>
 
+              <Suspense fallback={null}>
+                <SessionExpiredNotice />
+              </Suspense>
+
               {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium">
+                <div className="mb-6 p-4 bg-red-50 border border-red-100 text-ink-700 rounded-lg text-sm font-medium">
                   {error}
                 </div>
               )}
@@ -177,24 +176,7 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin("attendee")}
-                  disabled={!!demoLoading}
-                  className="rounded-lg border border-line bg-white px-4 py-3 text-sm font-bold text-navy-900 hover:bg-ink-50 disabled:opacity-70 flex items-center justify-center"
-                >
-                  {demoLoading === "attendee" ? <Loader2 className="size-4 animate-spin" /> : "Demo Pengguna"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin("organizer")}
-                  disabled={!!demoLoading}
-                  className="rounded-lg border border-line bg-white px-4 py-3 text-sm font-bold text-navy-900 hover:bg-ink-50 disabled:opacity-70 flex items-center justify-center"
-                >
-                  {demoLoading === "organizer" ? <Loader2 className="size-4 animate-spin" /> : "Demo Organizer"}
-                </button>
-              </div>
+
             </div>
           </div>
         </div>

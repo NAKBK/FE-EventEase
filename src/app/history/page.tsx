@@ -1,38 +1,44 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Calendar, CheckCircle2, Clock, Loader2, MessageSquareText } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
-import { AccessibilityRequest, confirmRequest, getErrorMessage, listRequests, RequestStatus } from "@/lib/api";
-import { formatDateTime, requestTone, statusLabel } from "@/lib/attendee-ui";
+import { AccessibilityRequest, EventListItem, getErrorMessage, listEvents, listRequests, RequestStatus } from "@/lib/api";
+import { statusLabel } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
 import { MotionArticle, MotionCardGrid } from "@/components/ui/motion-card";
+import { PageBackdrop } from "@/components/attendee/PageBackdrop";
+import { RequestCard } from "@/components/attendee/RequestCard";
 
-const filters: Array<"all" | RequestStatus> = ["all", "pending", "responded", "confirmed", "closed", "verified"];
+type Filter = "all" | RequestStatus;
+
+const filters: Filter[] = ["all", "pending", "responded", "confirmed", "closed", "verified"];
 
 export default function HistoryPage() {
   const router = useRouter();
   const [requests, setRequests] = useState<AccessibilityRequest[]>([]);
-  const [filter, setFilter] = useState<"all" | RequestStatus>("all");
+  const [total, setTotal] = useState(0);
+  const [eventsById, setEventsById] = useState<Record<string, EventListItem>>({});
+  const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(true);
-  const [actingId, setActingId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   const fetchRequests = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
     try {
-      const data = await listRequests(filter === "all" ? undefined : filter);
+      // One fetch of everything; filtering client-side gives instant tabs and per-status counts.
+      // Event date/venue and whether it has ended are not part of a request, so they come from the events list.
+      const [data, events] = await Promise.all([listRequests(), listEvents({ limit: 50, offset: 0 }).catch(() => null)]);
       setRequests(data.items);
+      setTotal(data.total);
+      if (events) setEventsById(Object.fromEntries(events.items.map((event) => [event.id, event])));
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Gagal mengambil riwayat."));
+      setError(getErrorMessage(err, "Gagal mengambil permintaan."));
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -48,124 +54,117 @@ export default function HistoryPage() {
       return;
     }
 
-    fetchRequests();
+    void fetchRequests();
   }, [fetchRequests, router]);
 
-  const handleConfirm = async (requestId: string, accepted: boolean) => {
-    setActingId(requestId);
-    setError("");
-    setMessage("");
+  const counts = useMemo(() => {
+    const result: Record<string, number> = { all: requests.length };
+    requests.forEach((request) => {
+      result[request.status] = (result[request.status] ?? 0) + 1;
+    });
+    return result;
+  }, [requests]);
 
-    try {
-      await confirmRequest(requestId, accepted);
-      setMessage(accepted ? "Respons penyelenggara berhasil dikonfirmasi." : "Permintaan ditutup.");
-      fetchRequests();
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Gagal memperbarui permintaan."));
-    } finally {
-      setActingId(null);
-    }
-  };
+  const visible = useMemo(
+    () => (filter === "all" ? requests : requests.filter((request) => request.status === filter)),
+    [requests, filter],
+  );
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
-        <div className="max-w-5xl mx-auto flex flex-col gap-8">
-          <header>
-            <h1 className="font-serif text-4xl text-navy-900 mb-2">Riwayat Permintaan</h1>
-            <p className="text-sm text-ink-500">Pantau semua request aksesibilitas dan respons penyelenggara.</p>
+      <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+        <PageBackdrop variant="history" />
+        <div className="max-w-5xl mx-auto flex flex-col gap-4">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="font-serif text-3xl text-navy-900 mb-1">Riwayat Permintaan</h1>
+              <p className="text-sm text-ink-500">
+                Pantau dan kelola permintaan yang sudah kamu kirim: respons penyelenggara, konfirmasi, dan verifikasi setelah event.
+              </p>
+            </div>
+            <Link
+              href="/request"
+              className="shrink-0 rounded-xl border border-line bg-white px-4 py-2 text-center text-sm font-bold text-navy-900 hover:bg-bg-soft"
+            >
+              + Ajukan permintaan baru
+            </Link>
           </header>
 
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filter status">
             {filters.map((item) => (
               <button
                 key={item}
+                role="tab"
+                aria-selected={filter === item}
                 onClick={() => setFilter(item)}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-sm font-bold border whitespace-nowrap",
-                  filter === item ? "bg-navy-900 text-white border-navy-900" : "bg-white text-ink-600 border-line hover:text-navy-900",
+                  "flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-bold border whitespace-nowrap",
+                  filter === item ? "bg-navy-900 text-white border-navy-900" : "bg-white text-ink-500 border-line hover:text-navy-900",
                 )}
               >
                 {item === "all" ? "Semua" : statusLabel(item)}
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px]",
+                    filter === item ? "bg-white text-navy-900" : "bg-bg-soft text-ink-500",
+                  )}
+                >
+                  {counts[item] ?? 0}
+                </span>
               </button>
             ))}
           </div>
 
-          {message && <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">{message}</div>}
-          {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
+          {error && (
+            <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{error}</div>
+          )}
+          {!loading && total > requests.length && (
+            <p className="rounded-xl border border-amber-500/20 bg-amber-50 px-4 py-2 text-xs text-ink-700">
+              Menampilkan {requests.length} dari {total} permintaan terbaru.
+            </p>
+          )}
 
           {loading ? (
             <div className="py-16 flex justify-center">
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
-          ) : requests.length > 0 ? (
-            <MotionCardGrid className="space-y-4">
-              {requests.map((request) => (
-                <MotionArticle key={request.id} className="bg-white border border-line rounded-2xl p-5 shadow-sm hover:border-navy-200">
-                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    <div className="flex gap-4">
-                      <div className="size-11 rounded-xl bg-navy-50 flex items-center justify-center shrink-0">
-                        <MessageSquareText className="size-5 text-navy-700" />
-                      </div>
-                      <div>
-                        <span className={cn("inline-flex rounded-full px-3 py-1 text-xs font-bold mb-2", requestTone(request.status))}>
-                          {statusLabel(request.status)}
-                        </span>
-                        <h2 className="text-lg font-bold text-navy-900">{request.event_title}</h2>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-ink-500 mt-2">
-                          <span className="flex items-center gap-1.5"><Calendar className="size-4" /> Tiba {formatDateTime(request.arrival_estimate)}</span>
-                          <span className="flex items-center gap-1.5"><Clock className="size-4" /> Dibuat {formatDateTime(request.created_at)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {request.status === "responded" && (
-                      <div className="flex flex-col sm:flex-row gap-2 lg:justify-end">
-                        <button
-                          onClick={() => handleConfirm(request.id, true)}
-                          disabled={actingId === request.id}
-                          className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
-                        >
-                          Terima
-                        </button>
-                        <button
-                          onClick={() => handleConfirm(request.id, false)}
-                          disabled={actingId === request.id}
-                          className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-navy-900 hover:bg-ink-50 disabled:opacity-70 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
-                        >
-                          Tolak
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="rounded-xl bg-ink-50 p-4">
-                      <p className="text-xs font-bold text-ink-500 uppercase mb-2">Catatan kamu</p>
-                      <p className="text-sm text-navy-900 leading-relaxed">{request.note || "-"}</p>
-                    </div>
-                    <div className="rounded-xl bg-ink-50 p-4">
-                      <p className="text-xs font-bold text-ink-500 uppercase mb-2">Respons organizer</p>
-                      {request.response ? (
-                        <div>
-                          <p className="text-sm font-bold text-navy-900">{request.response.decision.replaceAll("_", " ")}</p>
-                          <p className="text-sm text-ink-600 mt-1">{request.response.note}</p>
-                          <p className="text-xs text-ink-400 mt-2">{formatDateTime(request.response.responded_at)}</p>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-ink-500">Belum ada respons.</p>
-                      )}
-                    </div>
-                  </div>
+          ) : visible.length > 0 ? (
+            <MotionCardGrid key={filter} className="flex flex-col gap-4">
+              {visible.map((request) => (
+                <MotionArticle
+                  key={request.id}
+                  className="bg-white border border-line rounded-[2rem] p-5 sm:p-6 shadow-sm hover:border-navy-100"
+                  lift={false}
+                >
+                  <RequestCard
+                    request={request}
+                    event={eventsById[request.event_id]}
+                    showEvent
+                    variant="list"
+                    onChanged={() => void fetchRequests()}
+                  />
                 </MotionArticle>
               ))}
             </MotionCardGrid>
           ) : (
-            <div className="bg-white border border-line rounded-2xl p-12 text-center">
+            <div className="bg-white border border-line rounded-2xl p-10 text-center">
               <CheckCircle2 className="size-10 text-ink-300 mx-auto mb-3" />
-              <h2 className="font-bold text-navy-900">Riwayat masih kosong</h2>
-              <p className="text-sm text-ink-500 mt-1">Permintaan yang kamu kirim dari Home akan muncul di sini.</p>
+              <h2 className="font-bold text-navy-900">
+                {filter === "all" ? "Belum ada permintaan" : `Tidak ada permintaan berstatus ${statusLabel(filter).toLowerCase()}`}
+              </h2>
+              <p className="text-sm text-ink-500 mt-1">
+                {filter === "all" ? (
+                  <>
+                    Kirim permintaan dari halaman detail event.{" "}
+                    <Link href="/" className="font-bold text-navy-700 underline">
+                      Cari event
+                    </Link>
+                  </>
+                ) : (
+                  "Coba filter status lain."
+                )}
+              </p>
             </div>
           )}
         </div>

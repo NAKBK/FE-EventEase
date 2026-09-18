@@ -1,39 +1,46 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Calendar, Loader2, MapPin, Send } from "lucide-react";
+import { Calendar, Loader2, MapPin } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
-import { createRequest, EventListItem, getErrorMessage, listEvents } from "@/lib/api";
-import { formatDateTime, fromLocalInputValue, toLocalInputValue } from "@/lib/attendee-ui";
-import { MotionAside, MotionCardGrid, MotionForm } from "@/components/ui/motion-card";
+import { EventDetail, EventListItem, getErrorMessage, getEvent, listEvents, listRequests, RequestStatus } from "@/lib/api";
+import { formatDateTime, requestTone, statusLabel } from "@/lib/attendee-ui";
+import { cn } from "@/lib/utils";
+import { MotionSection } from "@/components/ui/motion-card";
+import { RequestPanel } from "@/components/attendee/RequestPanel";
+import { PageBackdrop } from "@/components/attendee/PageBackdrop";
+
+const ACTIVE: RequestStatus[] = ["pending", "responded", "confirmed"];
 
 export default function RequestPage() {
   const router = useRouter();
   const [events, setEvents] = useState<EventListItem[]>([]);
+  const [statuses, setStatuses] = useState<Record<string, RequestStatus>>({});
   const [eventId, setEventId] = useState("");
-  const [arrival, setArrival] = useState(toLocalInputValue());
-  const [note, setNote] = useState("");
+  const [detail, setDetail] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
-  const loadEvents = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
+  // Latest request status per event, preferring an active one, so the picker shows where each event stands.
+  const loadStatuses = useCallback(async (): Promise<Record<string, RequestStatus>> => {
     try {
-      const data = await listEvents({ status: "upcoming", limit: 50, offset: 0 });
-      setEvents(data.items);
-      if (data.items[0]) {
-        setEventId(data.items[0].id);
-        setArrival(toLocalInputValue(data.items[0].starts_at));
-      }
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Gagal mengambil daftar event."));
-    } finally {
-      setLoading(false);
+      const data = await listRequests();
+      const map: Record<string, RequestStatus> = {};
+      [...data.items]
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .forEach((request) => {
+          if (ACTIVE.includes(request.status) || !map[request.event_id] || !ACTIVE.includes(map[request.event_id])) {
+            map[request.event_id] = request.status;
+          }
+        });
+      setStatuses(map);
+      return map;
+    } catch {
+      // The panel reports its own load errors; the picker simply shows no status.
+      return {};
     }
   }, []);
 
@@ -51,129 +58,151 @@ export default function RequestPage() {
       return;
     }
 
-    loadEvents();
-  }, [loadEvents, router]);
+    (async () => {
+      try {
+        const data = await listEvents({ status: "upcoming", limit: 50, offset: 0 });
+        setEvents(data.items);
+        const map = await loadStatuses();
+        setEventId(data.items.find((event) => !ACTIVE.includes(map[event.id]))?.id ?? "");
+      } catch (err: unknown) {
+        setError(getErrorMessage(err, "Gagal mengambil daftar event."));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [router, loadStatuses]);
 
-  const selectedEvent = events.find((event) => event.id === eventId);
+  useEffect(() => {
+    if (!eventId) return;
+    let cancelled = false;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-    setMessage("");
+    (async () => {
+      setDetailLoading(true);
+      try {
+        const data = await getEvent(eventId);
+        if (!cancelled) {
+          setDetail(data);
+          setError("");
+        }
+      } catch (err: unknown) {
+        if (!cancelled) setError(getErrorMessage(err, "Gagal memuat event."));
+      } finally {
+        if (!cancelled) setDetailLoading(false);
+      }
+    })();
 
-    try {
-      await createRequest(eventId, {
-        arrival_estimate: fromLocalInputValue(arrival),
-        note,
-      });
-      setMessage("Permintaan aksesibilitas berhasil dikirim.");
-      setNote("");
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Gagal mengirim permintaan."));
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
+
+  const currentStatus = statuses[eventId];
+  // Events that already have an active request are managed in Permintaan, so they are not offered here again
+  // (the one currently open stays listed so the picker does not jump after sending).
+  const available = events.filter((event) => !ACTIVE.includes(statuses[event.id]) || event.id === eventId);
+  const activeCount = events.filter((event) => ACTIVE.includes(statuses[event.id])).length;
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
-        <div className="max-w-4xl mx-auto flex flex-col gap-8">
+      <div className="relative isolate min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-8 bg-bg-soft">
+      <PageBackdrop variant="request" />
+        <div className="max-w-5xl mx-auto flex flex-col gap-4">
           <header>
-            <h1 className="font-serif text-4xl text-navy-900 mb-2">Permintaan Aksesibilitas</h1>
-            <p className="text-sm text-ink-500">Kirim kebutuhan spesifik ke organizer untuk event yang ingin kamu hadiri.</p>
+            <h1 className="font-serif text-3xl text-navy-900 mb-1">Ajukan Permintaan</h1>
+            <p className="text-sm text-ink-500">
+              Kirim permintaan baru untuk event yang belum kamu minta dukungannya. Untuk memantau, menerima, atau memverifikasi permintaan
+              yang sudah dikirim, buka{" "}
+              <Link href="/history" className="font-bold text-navy-700 underline">
+                Permintaan
+              </Link>
+              .
+            </p>
           </header>
 
-          {message && <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">{message}</div>}
-          {error && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
+          {error && (
+            <div className="rounded-xl border border-red-500/20 bg-red-50 px-4 py-3 text-sm font-semibold text-ink-700">{error}</div>
+          )}
 
           {loading ? (
             <div className="py-16 flex justify-center">
               <Loader2 className="size-8 animate-spin text-navy-900" />
             </div>
+          ) : available.length === 0 ? (
+            <div className="bg-white border border-line rounded-2xl p-10 text-center text-sm text-ink-500">
+              {events.length === 0 ? (
+                "Belum ada event yang akan datang untuk diajukan permintaan."
+              ) : (
+                <>
+                  Semua event yang akan datang sudah punya permintaan aktif darimu. Pantau statusnya di{" "}
+                  <Link href="/history" className="font-bold text-navy-700 underline">
+                    Permintaan
+                  </Link>
+                  .
+                </>
+              )}
+            </div>
           ) : (
-            <MotionCardGrid className="grid grid-cols-1 lg:grid-cols-[1fr_0.75fr] gap-6">
-              <MotionForm onSubmit={handleSubmit} className="bg-white border border-line rounded-[2rem] p-6 sm:p-8 shadow-sm flex flex-col gap-5 hover:border-navy-200" lift={false}>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-navy-900">Pilih event</label>
-                  <select
-                    value={eventId}
-                    onChange={(e) => {
-                      const nextId = e.target.value;
-                      const nextEvent = events.find((event) => event.id === nextId);
-                      setEventId(nextId);
-                      if (nextEvent) setArrival(toLocalInputValue(nextEvent.starts_at));
-                    }}
-                    className="rounded-xl border border-line bg-bg px-4 py-3 text-sm font-semibold text-navy-900 focus:outline-none focus:border-navy-500"
-                    required
-                  >
-                    {events.map((event) => (
-                      <option key={event.id} value={event.id}>
-                        {event.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-navy-900">Estimasi tiba</label>
-                  <input
-                    type="datetime-local"
-                    value={arrival}
-                    onChange={(e) => setArrival(e.target.value)}
-                    className="rounded-xl border border-line bg-bg px-4 py-3 text-sm focus:outline-none focus:border-navy-500"
-                    required
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-navy-900">Catatan untuk organizer</label>
-                  <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    maxLength={500}
-                    rows={6}
-                    placeholder="Contoh: Mohon konfirmasi pintu masuk tanpa tangga dan area drop-off."
-                    className="rounded-xl border border-line bg-bg px-4 py-3 text-sm resize-none focus:outline-none focus:border-navy-500"
-                    required
-                  />
-                  <p className="text-xs text-ink-400 text-right">{note.length}/500</p>
-                </div>
-
-                <button
-                  disabled={submitting || !eventId}
-                  className="rounded-xl bg-navy-900 px-5 py-3 text-sm font-bold text-white hover:bg-navy-800 disabled:opacity-70 flex items-center justify-center gap-2 motion-safe:transition-transform motion-safe:active:scale-[0.985]"
+            <MotionSection className="bg-white border border-line rounded-[2rem] p-5 sm:p-6 shadow-sm flex flex-col gap-5" lift={false}>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="event" className="text-sm font-bold text-navy-900">
+                  Pilih event
+                </label>
+                <select
+                  id="event"
+                  value={eventId}
+                  onChange={(e) => setEventId(e.target.value)}
+                  className="rounded-xl border border-line bg-bg px-4 py-2.5 text-sm font-semibold text-navy-900 focus:outline-none focus:border-navy-500"
                 >
-                  {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                  Kirim permintaan
-                </button>
-              </MotionForm>
-
-              <MotionAside className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-fit hover:border-navy-200">
-                <h2 className="text-lg font-bold text-navy-900 mb-4">Ringkasan event</h2>
-                {selectedEvent ? (
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-bold text-gold-600 uppercase mb-2">Upcoming</p>
-                      <h3 className="text-xl font-bold text-navy-900">{selectedEvent.title}</h3>
-                    </div>
-                    <div className="space-y-2 text-sm text-ink-600">
-                      <p className="flex items-center gap-2"><Calendar className="size-4" /> {formatDateTime(selectedEvent.starts_at)}</p>
-                      <p className="flex items-center gap-2"><MapPin className="size-4" /> {selectedEvent.venue.name}, {selectedEvent.venue.city}</p>
-                    </div>
-                    <div className="rounded-xl bg-ink-50 p-4">
-                      <p className="text-xs font-bold text-ink-500 uppercase mb-1">Organizer</p>
-                      <p className="text-sm font-bold text-navy-900">{selectedEvent.organizer.name}</p>
-                      <p className="text-xs text-ink-500 mt-1">Reliability {selectedEvent.organizer.reliability_score ?? "-"} dari {selectedEvent.organizer.sample_count} sampel</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-ink-500">Belum ada event upcoming tersedia.</p>
+                  {available.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.title} · {formatDateTime(event.starts_at)}
+                      {statuses[event.id] ? ` · ${statusLabel(statuses[event.id])}` : ""}
+                    </option>
+                  ))}
+                </select>
+                {activeCount > 0 && (
+                  <p className="text-xs text-ink-500">
+                    {activeCount} event lain sudah punya permintaan aktif dan dikelola di{" "}
+                    <Link href="/history" className="font-bold text-navy-700 underline">
+                      Permintaan
+                    </Link>
+                    .
+                  </p>
                 )}
-              </MotionAside>
-            </MotionCardGrid>
+              </div>
+
+              {detailLoading || !detail || detail.id !== eventId ? (
+                <div className="py-10 flex justify-center border-t border-line">
+                  <Loader2 className="size-6 animate-spin text-navy-900" />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4 border-t border-line pt-5">
+                  <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-bold text-navy-900 leading-tight">{detail.title}</h2>
+                      <div className="mt-1 flex flex-col gap-0.5 text-xs text-ink-500 sm:flex-row sm:gap-4">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="size-3.5" /> {formatDateTime(detail.starts_at)}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="size-3.5" /> {detail.venue.name}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={cn(
+                        "shrink-0 self-start rounded-full px-2.5 py-0.5 text-xs font-bold",
+                        currentStatus ? requestTone(currentStatus) : "bg-bg-soft text-ink-500",
+                      )}
+                    >
+                      {currentStatus ? statusLabel(currentStatus) : "Belum diminta"}
+                    </span>
+                  </div>
+                  <RequestPanel key={detail.id} event={detail} onChange={loadStatuses} />
+                </div>
+              )}
+            </MotionSection>
           )}
         </div>
       </div>

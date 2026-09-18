@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, MapPin, Loader2, X } from "lucide-react";
+import { Plus, Calendar, MapPin, Loader2, X, UploadCloud, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
-import { MotionCard, MotionCardGrid } from "@/components/ui/motion-card";
+import Link from "next/link";
 
 interface EventItem {
   id: string;
@@ -32,12 +33,22 @@ export default function EventManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("all");
+  const [page, setPage] = useState(1);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  const [files, setFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+    }
+  };
   
   const initialFormState = {
     title: "",
@@ -46,7 +57,7 @@ export default function EventManagementPage() {
     ends_at: "",
     venue: {
       name: "",
-      city: "",
+      city: "Jakarta",
       address: "",
     },
     claim: {
@@ -81,7 +92,9 @@ export default function EventManagementPage() {
     }
 
     try {
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/api/events?mine=true`;
+      const limit = 5;
+      const offset = (page - 1) * limit;
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/api/events?mine=true&limit=${limit}&offset=${offset}`;
       if (filter !== "all") {
         url += `&status=${filter}`;
       }
@@ -105,7 +118,7 @@ export default function EventManagementPage() {
 
   useEffect(() => {
     fetchEvents();
-  }, [router, filter]);
+  }, [router, filter, page]);
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +128,9 @@ export default function EventManagementPage() {
     const token = localStorage.getItem("token");
     
     try {
+      const startIso = new Date(formData.starts_at).toISOString();
+      const endIso = new Date(formData.ends_at).toISOString();
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events`, {
         method: "POST",
         headers: {
@@ -123,8 +139,14 @@ export default function EventManagementPage() {
         },
         body: JSON.stringify({
           ...formData,
+          starts_at: startIso,
+          ends_at: endIso,
+          venue: {
+            name: formData.venue.name,
+            city: "Jakarta",
+            address: formData.venue.address
+          },
           claim: {
-            ...formData.claim,
             step_free_entrance: Number(formData.claim.step_free_entrance),
             elevator_or_ramp: Number(formData.claim.elevator_or_ramp),
             accessible_restroom: Number(formData.claim.accessible_restroom),
@@ -137,13 +159,51 @@ export default function EventManagementPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Gagal membuat acara.");
+        const data = await res.json().catch(() => ({}));
+        console.error("Backend 422 Error Payload:", data);
+        const detailStr = data.error ? JSON.stringify(data.error.details?.fields || data.error) : JSON.stringify(data);
+        alert(`ERROR 422 DARI BACKEND: ${detailStr}`);
+        throw new Error(data.error?.message || "Gagal membuat acara.");
+      }
+      
+      const eventData = await res.json().catch(() => ({}));
+      console.log("Response eventData:", eventData);
+      
+      const eventId = eventData.id || eventData.event_id || eventData.data?.id;
+
+      if (!eventId) {
+        console.warn("Event ID is missing from response! Cannot upload media.");
+        // alert("Event berhasil dibuat, tapi gagal mengunggah foto karena ID tidak ditemukan.");
+      }
+
+      console.log("Files to upload:", files.length, "EventID:", eventId);
+
+      if (files.length > 0 && eventId) {
+        for (const f of files) {
+          const formDataMedia = new FormData();
+          formDataMedia.append("file", f);
+          
+          console.log("Uploading file:", f.name, "to event:", eventId);
+          
+          try {
+            const mediaRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${eventId}/media`, {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${token}`
+              },
+              body: formDataMedia
+            });
+            console.log("Media upload response:", mediaRes.status);
+          } catch (mediaErr) {
+            console.error("Media upload error:", mediaErr);
+          }
+        }
       }
 
       // Success
       setIsModalOpen(false);
       setFormData(initialFormState);
+      setFiles([]);
       fetchEvents(); // Refresh data
     } catch(err: any) {
       setSubmitError(err.message || "Terjadi kesalahan koneksi.");
@@ -212,8 +272,12 @@ export default function EventManagementPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
-        <div className="max-w-4xl mx-auto flex flex-col gap-8">
+      <div className="relative min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30 overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-[20%] left-[-100px] w-[600px] h-[600px] bg-gold-500/30 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+        <div className="absolute bottom-[20%] right-[-100px] w-[600px] h-[600px] bg-navy-500/30 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+
+        <div className="relative z-10 max-w-4xl mx-auto flex flex-col gap-8">
           
           {/* Header */}
           <div>
@@ -222,17 +286,17 @@ export default function EventManagementPage() {
           </div>
 
           {/* Banner: Register New Event */}
-          <MotionCard className="bg-gradient-to-br from-navy-900 to-[#1e2a45] text-white rounded-3xl p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-navy-900 to-[#1e2a45] text-white rounded-3xl p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
             {/* Soft white hints */}
             <div className="absolute top-0 left-0 w-48 h-48 bg-white/20 rounded-full blur-[60px] -translate-x-1/3 -translate-y-1/3 pointer-events-none z-0"></div>
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-[60px] translate-x-1/3 translate-y-1/3 pointer-events-none z-0"></div>
             
             <div className="relative z-10 flex-1">
               <h2 className="font-serif text-4xl text-white mb-2 tracking-tight">
-                Register New <span className="italic font-light">Event.</span>
+                Register <span className="italic font-light">Acara</span> baru
               </h2>
               <p className="text-gold-500 text-sm font-medium max-w-md">
-                Gratis selamanya untuk fitur dasar. Upgrade kapan saja kamu butuh lebih.
+                Daftarkan dan kelola event kamu tanpa batas, 100% gratis.
               </p>
             </div>
             
@@ -245,22 +309,28 @@ export default function EventManagementPage() {
                 <div className="absolute inset-0 z-0 bg-gold-400 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
               </button>
             </div>
-          </MotionCard>
+          </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-2 p-1.5 bg-ink-100/50 rounded-xl w-fit">
-            {(["all", "upcoming", "completed"] as const).map((f) => (
+          <div className="relative flex p-1.5 bg-ink-50 border border-line rounded-xl w-fit">
+            {[{ id: "all", label: "Semua" }, { id: "upcoming", label: "Upcoming" }, { id: "completed", label: "Selesai" }].map((option) => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
+                key={option.id}
+                type="button"
+                onClick={() => { setFilter(option.id as "all"|"upcoming"|"completed"); setPage(1); }}
                 className={cn(
-                  "px-5 py-2.5 rounded-lg text-sm font-bold transition-all",
-                  filter === f
-                    ? "bg-white text-navy-900 shadow-sm"
-                    : "text-ink-500 hover:text-navy-900 hover:bg-white/50"
+                  "relative px-6 py-2 text-sm font-bold z-10 transition-colors text-center",
+                  filter === option.id ? "text-navy-900" : "text-ink-400 hover:text-navy-700"
                 )}
               >
-                {f === "all" ? "Semua" : f === "upcoming" ? "Upcoming" : "Selesai"}
+                {option.label}
+                {filter === option.id && (
+                  <motion.div
+                    layoutId="filter-pill"
+                    className="absolute inset-0 bg-white rounded-lg shadow-sm border border-line/50 -z-10"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
               </button>
             ))}
           </div>
@@ -274,21 +344,10 @@ export default function EventManagementPage() {
                 <Loader2 className="w-6 h-6 animate-spin text-ink-400" />
               </div>
             ) : events?.items && events.items.length > 0 ? (
-              <MotionCardGrid className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4">
                 {events.items.map((evt) => (
-                  <MotionCard key={evt.id} className="bg-white rounded-2xl border border-line p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-navy-200">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={cn(
-                          "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                          evt.status === "upcoming" 
-                            ? "bg-green-100 text-green-700" 
-                            : "bg-gold-100 text-gold-700"
-                        )}>
-                          {getStatusLabel(evt.status)}
-                        </span>
-                        <span className="text-xs font-bold text-ink-400">{evt.id}</span>
-                      </div>
+                  <div key={evt.id} className="bg-white rounded-2xl border border-line p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-navy-200">
+                    <div className="relative z-10">
                       <h4 className="text-base font-bold text-navy-900 mb-2">{evt.title}</h4>
                       <div className="flex items-center gap-4 text-xs font-medium text-ink-500">
                         <div className="flex items-center gap-1.5">
@@ -301,13 +360,43 @@ export default function EventManagementPage() {
                         </div>
                       </div>
                     </div>
-                    
-                    <button className="w-full md:w-auto px-4 py-2 border border-line rounded-lg text-xs font-bold text-navy-900 hover:bg-ink-50 motion-safe:transition-[color,background-color,transform] motion-safe:active:scale-[0.985]">
-                      Kelola
-                    </button>
-                  </MotionCard>
+                    <div className="relative z-10 shrink-0">
+                      <span className={cn(
+                        "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider block text-center",
+                        evt.status === "upcoming" 
+                          ? "bg-transparent border border-green-800 text-green-800" 
+                          : "bg-transparent border border-navy-900 text-navy-900"
+                      )}>
+                        {getStatusLabel(evt.status)}
+                      </span>
+                    </div>
+                  </div>
                 ))}
-              </MotionCardGrid>
+
+                {events.total > 5 && (
+                  <div className="flex items-center justify-center gap-4 pt-6 mt-2 border-t border-line">
+                    <button 
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="p-2 text-ink-500 hover:text-navy-900 disabled:opacity-30 disabled:hover:text-ink-500 transition-colors"
+                      aria-label="Sebelumnya"
+                    >
+                      &larr;
+                    </button>
+                    <span className="text-sm text-navy-900">
+                      <span className="font-bold">{page}</span> <span className="font-medium text-ink-500">dari</span> <span className="font-bold">{Math.ceil(events.total / 5)}</span>
+                    </span>
+                    <button 
+                      onClick={() => setPage(p => Math.min(Math.ceil(events.total / 5), p + 1))}
+                      disabled={page >= Math.ceil(events.total / 5)}
+                      className="p-2 text-ink-500 hover:text-navy-900 disabled:opacity-30 disabled:hover:text-ink-500 transition-colors"
+                      aria-label="Berikutnya"
+                    >
+                      &rarr;
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="bg-white rounded-2xl border border-line p-12 flex flex-col items-center justify-center text-center shadow-sm">
                 <div className="w-16 h-16 bg-ink-50 rounded-full flex items-center justify-center mb-4">
@@ -423,31 +512,17 @@ export default function EventManagementPage() {
                 <div className="space-y-4">
                   <h3 className="text-base font-bold text-navy-900 border-b border-line pb-2">Lokasi / Venue</h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-navy-900" htmlFor="venue_name">Nama Lokasi <span className="text-red-500">*</span></label>
-                      <input 
-                        id="venue_name"
-                        type="text"
-                        placeholder="Contoh: Gedung Serbaguna A"
-                        className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
-                        value={formData.venue.name}
-                        onChange={(e) => setFormData({...formData, venue: {...formData.venue, name: e.target.value}})}
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-navy-900" htmlFor="venue_city">Kota <span className="text-red-500">*</span></label>
-                      <input 
-                        id="venue_city"
-                        type="text"
-                        placeholder="Contoh: Jakarta"
-                        className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
-                        value={formData.venue.city}
-                        onChange={(e) => setFormData({...formData, venue: {...formData.venue, city: e.target.value}})}
-                        required
-                      />
-                    </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-navy-900" htmlFor="venue_name">Nama Lokasi <span className="text-red-500">*</span></label>
+                    <input 
+                      id="venue_name"
+                      type="text"
+                      placeholder="Contoh: Gedung Serbaguna A"
+                      className="px-4 py-3 rounded-lg border border-line bg-bg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition-all text-sm w-full"
+                      value={formData.venue.name}
+                      onChange={(e) => setFormData({...formData, venue: {...formData.venue, name: e.target.value}})}
+                      required
+                    />
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -502,6 +577,61 @@ export default function EventManagementPage() {
                         onChange={(e) => setFormData({...formData, claim: {...formData.claim, walking_distance_m: Number(e.target.value)}})}
                       />
                     </div>
+                  </div>
+                </div>
+                
+                {/* Section 4: Upload Foto */}
+                <div className="space-y-4 pt-4 border-t border-line/50">
+                  <div className="border-b border-line pb-2">
+                    <h3 className="text-base font-bold text-navy-900">Foto Acara (Opsional)</h3>
+                  </div>
+                  <p className="text-sm text-ink-500 mb-2">Unggah foto sebagai referensi visual aksesibilitas untuk peserta.</p>
+                  
+                  <div 
+                    className="border-2 border-dashed border-line rounded-2xl p-6 flex flex-col items-center justify-center bg-bg hover:bg-ink-50/50 transition-colors cursor-pointer group relative overflow-hidden"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      ref={fileInputRef} 
+                      accept="image/png, image/jpeg, application/pdf"
+                      multiple
+                      onChange={handleFileChange}
+                    />
+                    {files.length > 0 ? (
+                      <div className="w-full z-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                          {files.map((f, i) => (
+                            <div key={i} className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-line text-left relative group">
+                              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-xs font-bold text-navy-900 truncate">{f.name}</h4>
+                                <p className="text-[10px] font-medium text-ink-400 uppercase">{(f.size / 1024 / 1024).toFixed(2)} MB</p>
+                              </div>
+                              <button 
+                                type="button" 
+                                onClick={(e) => { e.stopPropagation(); setFiles(files.filter((_, idx) => idx !== i)); }}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="text-center text-xs font-bold text-navy-600 hover:text-navy-900 transition-colors uppercase tracking-wider">
+                          + Tambah Foto Lainnya
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center z-10">
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-3 group-hover:scale-110 transition-transform">
+                          <UploadCloud className="w-6 h-6 text-navy-400" />
+                        </div>
+                        <h4 className="text-sm font-bold text-navy-900 mb-1">Upload Foto Acara</h4>
+                        <p className="text-xs text-ink-500">Tarik file ke sini atau klik untuk pilih (Bisa lebih dari 1 file)</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

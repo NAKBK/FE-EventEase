@@ -21,7 +21,7 @@ export const Navbar = () => {
   const handleLogout = () => {
     clearSession();
     setRole(null);
-    router.push("/");
+    router.push("/login");
   };
 
   // Prevent hydration mismatch by returning empty div structure before mount
@@ -37,7 +37,7 @@ export const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-bg/80 backdrop-blur-md border-b border-line">
       {/* Left side: Logo */}
       <div className="flex items-center gap-2">
-        <Link href="/" className="font-serif text-3xl font-medium tracking-tight flex items-center gap-2">
+        <Link href={role === "organizer" ? "/dashboard" : "/"} className="font-serif text-3xl font-medium tracking-tight flex items-center gap-2">
           <img src="/logo.png" alt="EventEase Logo" className="w-8 h-8 object-contain" />
           <div>
             <span className="text-navy-900">Event</span>
@@ -71,13 +71,10 @@ export const Navbar = () => {
               <TextRoll center className="text-sm font-extrabold uppercase">HOME</TextRoll>
             </Link>
             <Link href="/history" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
-              <TextRoll center className="text-sm font-extrabold uppercase">RIWAYAT</TextRoll>
+              <TextRoll center className="text-sm font-extrabold uppercase">PERMINTAAN</TextRoll>
             </Link>
             <Link href="/verification" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
               <TextRoll center className="text-sm font-extrabold uppercase">VERIFIKASI</TextRoll>
-            </Link>
-            <Link href="/request" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
-              <TextRoll center className="text-sm font-extrabold uppercase">PERMINTAAN</TextRoll>
             </Link>
             <Link href="/profile" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
               <TextRoll center className="text-sm font-extrabold uppercase">PROFIL</TextRoll>
@@ -93,9 +90,7 @@ export const Navbar = () => {
             <Link href="/event" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
               <TextRoll center className="text-sm font-extrabold uppercase">ACARA</TextRoll>
             </Link>
-            <Link href="/registration" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
-              <TextRoll center className="text-sm font-extrabold uppercase">PENDAFTARAN</TextRoll>
-            </Link>
+
             <Link href="/profile" className="text-ink-700 hover:text-navy-700 font-extrabold text-sm">
               <TextRoll center className="text-sm font-extrabold uppercase">PROFIL</TextRoll>
             </Link>
