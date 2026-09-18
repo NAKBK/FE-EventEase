@@ -8,6 +8,7 @@ import {
   Calendar,
   Check,
   CircleHelp,
+  ImageOff,
   Info,
   Loader2,
   MapPin,
@@ -119,6 +120,7 @@ export default function EventDetailPage() {
   }, [eventId, router]);
 
   const tier = matchTier(match?.score);
+  const hasPhotos = (event?.media.length ?? 0) > 0;
   const reliability = organizer?.reliability ?? null;
   const reliabilityScore = reliability ? reliability.score : event?.organizer.reliability_score ?? null;
   const reliabilityCount = reliability ? reliability.sample_count : event?.organizer.sample_count ?? 0;
@@ -148,13 +150,14 @@ export default function EventDetailPage() {
             </div>
           ) : (
             <>
-              <PhotoCarousel
-                images={event.media.map((item) => ({ id: item.id, url: item.url }))}
-                title={event.title}
-                caption="Foto dari penyelenggara, bukan sertifikasi"
-              />
-
-              <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-stretch">
+              <div className={cn("grid grid-cols-1 gap-4 items-stretch", hasPhotos && "lg:grid-cols-2")}>
+                {hasPhotos && (
+                  <PhotoCarousel
+                    images={event.media.map((item) => ({ id: item.id, url: item.url }))}
+                    title={event.title}
+                    caption="Foto penyelenggara, bukan sertifikasi"
+                  />
+                )}
                 <MotionSection className="bg-white border border-line rounded-[2rem] p-6 shadow-sm h-full" lift={false}>
                   <span className="inline-flex rounded-full bg-navy-50 px-3 py-1 text-xs font-bold text-navy-700 mb-2">
                     {statusLabel(event.status)}
@@ -171,34 +174,14 @@ export default function EventDetailPage() {
                     </span>
                   </div>
                   {event.description && <p className="mt-3 text-sm text-ink-700 leading-relaxed">{event.description}</p>}
+                  {!hasPhotos && (
+                    <p className="mt-3 flex items-center gap-2 text-xs text-ink-500">
+                      <ImageOff className="size-4 text-ink-300" /> Penyelenggara belum mengunggah foto untuk event ini.
+                    </p>
+                  )}
                 </MotionSection>
 
-                <MotionCard className="rounded-[2rem] bg-navy-900 text-white p-6 shadow-sm h-full flex flex-col justify-center">
-                  <p className="text-sm text-navy-100 mb-1">Skor kecocokan untukmu</p>
-                  <div className="flex items-end gap-3">
-                    <p className="text-5xl font-bold leading-none">{match?.score ?? "-"}</p>
-                    <span className="mb-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-navy-900">{tier.label}</span>
-                  </div>
-                  {match ? (
-                    <p className="text-xs text-navy-100 mt-3 leading-relaxed">
-                      {match.summary} Bobot {match.weight_version} (sementara), dihitung server, bukan jaminan.
-                    </p>
-                  ) : (
-                    <p className="text-xs text-navy-100 mt-3 leading-relaxed">
-                      {needsProfile
-                        ? "Skor belum bisa dihitung karena profil kebutuhanmu belum disimpan."
-                        : "Skor kecocokan belum tersedia untuk event ini."}
-                    </p>
-                  )}
-                  {needsProfile && (
-                    <Link
-                      href="/profile"
-                      className="mt-3 inline-flex w-fit rounded-xl bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-navy-50"
-                    >
-                      Isi profil kebutuhan
-                    </Link>
-                  )}
-                </MotionCard>
+
               </div>
 
               <MotionSection className="rounded-[2rem] bg-white border border-line p-6 shadow-sm" lift={false}>
@@ -256,7 +239,34 @@ export default function EventDetailPage() {
                 )}
               </MotionSection>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+                <MotionCard className="rounded-[2rem] bg-navy-900 text-white p-5 shadow-sm h-full flex flex-col justify-center">
+                  <p className="text-sm text-navy-100 mb-1">Skor kecocokan untukmu</p>
+                  <div className="flex items-end gap-3">
+                    <p className="text-5xl font-bold leading-none">{match?.score ?? "-"}</p>
+                    <span className="mb-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-navy-900">{tier.label}</span>
+                  </div>
+                  {match ? (
+                    <p className="text-xs text-navy-100 mt-3 leading-relaxed">
+                      {match.summary} Bobot {match.weight_version} (sementara), dihitung server, bukan jaminan.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-navy-100 mt-3 leading-relaxed">
+                      {needsProfile
+                        ? "Skor belum bisa dihitung karena profil kebutuhanmu belum disimpan."
+                        : "Skor kecocokan belum tersedia untuk event ini."}
+                    </p>
+                  )}
+                  {needsProfile && (
+                    <Link
+                      href="/profile"
+                      className="mt-3 inline-flex w-fit rounded-xl bg-white px-4 py-2 text-sm font-bold text-navy-900 hover:bg-navy-50"
+                    >
+                      Isi profil kebutuhan
+                    </Link>
+                  )}
+                </MotionCard>
+
                 <MotionCard className="rounded-[2rem] bg-white border border-line p-5 shadow-sm h-full">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="size-9 rounded-xl bg-navy-50 flex items-center justify-center">
