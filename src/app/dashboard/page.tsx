@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
+import { GlowingCards, GlowingCard } from "@/components/lightswind/glowing-cards";
+import { CountUp } from "@/components/lightswind/count-up";
 import { ArrowUpRight, Minus, Activity, ShieldCheck, Accessibility, CheckCircle2, Loader2 } from "lucide-react";
 import { apiFetch, AccessibilityRequest } from "@/lib/api";
 
@@ -73,13 +75,17 @@ export default function OrganizerDashboard() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
-        <div className="max-w-6xl mx-auto flex flex-col gap-8">
+      <div className="relative min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30 overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-navy-500/20 rounded-full blur-[120px] -translate-x-1/4 -translate-y-1/4 pointer-events-none -z-10"></div>
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gold-500/20 rounded-full blur-[120px] translate-x-1/4 translate-y-1/4 pointer-events-none -z-10"></div>
+
+        <div className="relative z-10 max-w-6xl mx-auto flex flex-col gap-8">
           
           {/* Header */}
           <div>
             <h1 className="font-serif text-4xl text-navy-900 mb-2 tracking-tight">Selamat datang, {userName}</h1>
-            <p className="text-ink-500 text-sm font-medium">Ringkasan event mu hari ini.</p>
+            <p className="text-ink-500 text-sm font-medium">Ringkasan acara mu hari ini.</p>
           </div>
 
           {loading ? (
@@ -89,52 +95,37 @@ export default function OrganizerDashboard() {
           ) : (
             <>
               {/* 3 Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <GlowingCards gap="1rem" padding="0" enableHover={true}>
                 {/* Card 1 */}
-                <div className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-2 text-ink-500 mb-4 font-medium text-sm">
-                    Baru
+                <GlowingCard glowColor="#3b82f6" className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-center items-start text-left">
+                  <div className="text-ink-500 mb-2 font-medium text-sm">
+                    Acara Baru
                   </div>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold text-navy-900">{baruCount}</span>
-                    <p className="text-ink-500 text-sm mt-1">New Request</p>
+                  <div>
+                    <CountUp value={baruCount} className="text-4xl font-bold text-navy-900" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 w-fit px-2 py-1 rounded-md">
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                    Berdasarkan Data Asli
-                  </div>
-                </div>
+                </GlowingCard>
 
                 {/* Card 2 */}
-                <div className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-2 text-ink-500 mb-4 font-medium text-sm">
-                    Proses
+                <GlowingCard glowColor="#3b82f6" className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-center items-start text-left">
+                  <div className="text-ink-500 mb-2 font-medium text-sm">
+                    Acara Diproses
                   </div>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold text-navy-900">{prosesCount}</span>
-                    <p className="text-ink-500 text-sm mt-1">Waiting for Response</p>
+                  <div>
+                    <CountUp value={prosesCount} className="text-4xl font-bold text-navy-900" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-ink-500 bg-ink-100 w-fit px-2 py-1 rounded-md">
-                    <Minus className="w-3.5 h-3.5" />
-                    Berdasarkan Data Asli
-                  </div>
-                </div>
+                </GlowingCard>
 
                 {/* Card 3 */}
-                <div className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-2 text-ink-500 mb-4 font-medium text-sm">
-                    Aktif
+                <GlowingCard glowColor="#3b82f6" className="bg-white border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-center items-start text-left">
+                  <div className="text-ink-500 mb-2 font-medium text-sm">
+                    Acara Aktif
                   </div>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold text-navy-900">{aktifCount}</span>
-                    <p className="text-ink-500 text-sm mt-1">Active Event</p>
+                  <div>
+                    <CountUp value={aktifCount} className="text-4xl font-bold text-navy-900" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-navy-600 bg-navy-50 w-fit px-2 py-1 rounded-md">
-                    <Activity className="w-3.5 h-3.5" />
-                    Berdasarkan Data Asli
-                  </div>
-                </div>
-              </div>
+                </GlowingCard>
+              </GlowingCards>
 
               <div className="flex flex-col gap-8">
                 

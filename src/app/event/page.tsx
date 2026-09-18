@@ -268,8 +268,12 @@ export default function EventManagementPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30">
-        <div className="max-w-4xl mx-auto flex flex-col gap-8">
+      <div className="relative min-h-screen pt-28 pb-24 px-4 sm:px-8 bg-ink-50/30 overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-[20%] left-[-100px] w-[600px] h-[600px] bg-gold-500/30 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+        <div className="absolute bottom-[20%] right-[-100px] w-[600px] h-[600px] bg-navy-500/30 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+
+        <div className="relative z-10 max-w-4xl mx-auto flex flex-col gap-8">
           
           {/* Header */}
           <div>
