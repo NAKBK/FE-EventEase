@@ -238,8 +238,8 @@ export default function Home() {
           </div>
           <div className="flex-1 w-full flex justify-end opacity-80 overflow-hidden md:-mr-8">
             <div className="w-full max-w-[500px] md:max-w-[650px] scale-110 md:scale-125 origin-right">
-              <DottedMap 
-                className="fill-white/30 w-full h-auto aspect-[2/1]" 
+              <DottedMap
+                className="fill-white/30 w-full h-auto aspect-[2/1]"
                 markers={[{ lat: -2, lng: 118, size: 3 }]}
                 markerColor="#F97316" // Orange-500 for the pulse rings
                 renderMarkerOverlay={({ x, y, r, index }) => {
@@ -247,7 +247,7 @@ export default function Home() {
                   const label = "IDN"
                   const href = `https://flagcdn.com/w80/${countryCode}.webp`
                   const clipId = `flag-clip-${index}`
-                  
+
                   const imgR = r * 0.8
                   const fontSize = r * 0.9
                   const pillH = r * 1.5
@@ -301,35 +301,41 @@ export default function Home() {
         <div className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-navy-800 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4 opacity-50"></div>
       </section>
 
-      {/* FAQ */}
-      <FAQSection />
-
       {/* CTA Section */}
       <section className="py-24 px-8 bg-bg relative overflow-hidden">
-        <div className="max-w-3xl mx-auto bg-navy-900 rounded-[var(--radius-xl)] p-12 text-center relative shadow-xl overflow-hidden">
-          <div className="relative z-10">
-            <h2 className="font-serif text-4xl md:text-5xl text-white mb-4">
-              Siap mulai? <br />
-              <em className="text-gold-400">Kami bantu sampai event-nya.</em>
-            </h2>
-            <p className="text-navy-100 mb-8 max-w-lg mx-auto">
-              Gratis selamanya untuk fitur dasar. Upgrade kapan saja kamu butuh lebih.
-            </p>
+        <div className="max-w-5xl mx-auto">
+          <div className="w-full bg-gradient-to-br from-navy-900 to-[#1e2a45] p-12 md:p-20 text-center relative shadow-xl overflow-hidden rounded-[2rem]">
+            
+            {/* Soft white hints */}
+            <div className="absolute top-0 left-0 w-48 h-48 bg-white/20 rounded-full blur-[60px] -translate-x-1/3 -translate-y-1/3 pointer-events-none z-0"></div>
+            <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-[60px] translate-x-1/3 translate-y-1/3 pointer-events-none z-0"></div>
 
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button className="bg-gold-500 hover:bg-gold-400 text-navy-900 font-bold py-3 px-8 rounded-full transition-colors shadow-lg shadow-gold-500/20">
-                Daftar Gratis
-              </button>
-              <button className="bg-transparent border border-navy-100 text-white hover:bg-navy-800 font-bold py-3 px-8 rounded-full transition-colors">
-                Lihat FAQ
-              </button>
+            <div className="relative z-10">
+              <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl text-white mb-6 tracking-tight leading-tight">
+                Siap mulai? Kami bantu sampai event-nya.
+              </h2>
+              <p className="text-gold-400 mb-10 max-w-xl mx-auto text-sm md:text-base leading-relaxed font-medium">
+                Gratis selamanya untuk fitur dasar. Upgrade kapan saja kamu<br className="hidden sm:block" /> butuh lebih.
+              </p>
+
+              <div className="flex flex-col sm:flex-row justify-center gap-4 md:gap-6">
+                <button className="group relative inline-flex h-12 md:h-14 items-center justify-center overflow-hidden rounded-full bg-white text-navy-900 font-bold px-8 shadow-md transition-colors">
+                  <span className="relative z-10">Daftar Gratis</span>
+                  <div className="absolute inset-0 z-0 bg-gold-400 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
+                </button>
+                
+                <button className="group relative inline-flex h-12 md:h-14 items-center justify-center overflow-hidden rounded-full bg-transparent border border-white/20 text-white font-medium px-8 transition-colors">
+                  <span className="relative z-10 transition-colors duration-300 group-hover:text-navy-900">Lihat FAQ</span>
+                  <div className="absolute inset-0 z-0 bg-white origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100" />
+                </button>
+              </div>
             </div>
           </div>
-
-          <div className="absolute -top-24 -left-24 w-64 h-64 bg-navy-800 rounded-full blur-3xl opacity-50"></div>
-          <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-navy-800 rounded-full blur-3xl opacity-50"></div>
         </div>
       </section>
+
+      {/* FAQ */}
+      <FAQSection />
 
       <Footer />
     </div>
