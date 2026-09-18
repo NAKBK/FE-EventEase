@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Calendar, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { AccessibilityRequest, confirmRequest, getErrorMessage, isApiError, listRequests, RequestStatus } from "@/lib/api";
 import { decisionLabel, formatDateTime, needSummary, requestTone, statusLabel } from "@/lib/attendee-ui";
@@ -171,12 +171,6 @@ export default function HistoryPage() {
                       </h2>
                     </div>
                     <div className="flex flex-col gap-1 text-xs text-ink-500 sm:items-end shrink-0">
-                      <span
-                        className="flex items-center gap-1.5"
-                        title="Waktu yang kamu perkirakan tiba di lokasi event. Kamu isi sendiri saat mengirim permintaan."
-                      >
-                        <Calendar className="size-3.5" /> Perkiraan tiba {formatDateTime(request.arrival_estimate)}
-                      </span>
                       <span className="flex items-center gap-1.5" title="Waktu permintaan ini dikirim ke penyelenggara.">
                         <Clock className="size-3.5" /> Diajukan {formatDateTime(request.created_at)}
                       </span>

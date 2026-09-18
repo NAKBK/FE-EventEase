@@ -17,11 +17,9 @@ import {
 import {
   decisionLabel,
   formatDateTime,
-  fromLocalInputValue,
   needSummary,
   requestTone,
   statusLabel,
-  toLocalInputValue,
   walkingLabel,
 } from "@/lib/attendee-ui";
 import { cn } from "@/lib/utils";
@@ -35,7 +33,7 @@ function requestErrorMessage(err: unknown) {
   if (isApiError(err, "ACTIVE_REQUEST_EXISTS")) return "Kamu sudah punya permintaan aktif untuk event ini.";
   if (isApiError(err, "EVENT_NOT_UPCOMING")) return "Event ini sudah selesai, permintaan tidak bisa dikirim.";
   if (isApiError(err, "NEED_PROFILE_MISSING")) return "Simpan profil kebutuhan aksesibilitasmu dulu sebelum mengirim permintaan.";
-  if (isApiError(err, "VALIDATION_ERROR")) return "Perkiraan waktu tiba atau pesan belum valid. Pesan wajib diisi, maksimal 500 karakter.";
+  if (isApiError(err, "VALIDATION_ERROR")) return "Pesan belum valid. Pesan wajib diisi, maksimal 500 karakter.";
   return getErrorMessage(err, "Gagal mengirim permintaan.");
 }
 
@@ -80,7 +78,6 @@ export function RequestPanel({ event, onChange }: RequestPanelProps) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  const [arrival, setArrival] = useState(toLocalInputValue(event.starts_at));
   const [note, setNote] = useState(`Mohon konfirmasi dukungan aksesibilitas untuk ${event.title}.`);
   const [submitting, setSubmitting] = useState(false);
   const [acting, setActing] = useState(false);
@@ -115,7 +112,9 @@ export function RequestPanel({ event, onChange }: RequestPanelProps) {
     setError("");
 
     try {
-      await createRequest(event.id, { arrival_estimate: fromLocalInputValue(arrival), note });
+      // API-008 requires arrival_estimate, but attendees can come any time, so it is not asked in the UI;
+      // the event start is sent as a neutral value.
+      await createRequest(event.id, { arrival_estimate: new Date(event.starts_at).toISOString(), note });
       await load();
       onChange?.();
     } catch (err: unknown) {
@@ -158,13 +157,6 @@ export function RequestPanel({ event, onChange }: RequestPanelProps) {
 
   const active = request && ACTIVE.includes(request.status) ? request : null;
   const stepStatus = request && (ACTIVE.includes(request.status) || request.status === "verified") ? request.status : null;
-  const arrivalDate = new Date(arrival);
-  const arrivalWarning =
-    arrival && arrivalDate.getTime() > new Date(event.ends_at).getTime()
-      ? "Waktu ini setelah event berakhir."
-      : arrival && arrivalDate.getTime() < Date.now()
-        ? "Waktu ini sudah lewat."
-        : "";
 
   return (
     <div className="flex flex-col gap-3">
@@ -189,16 +181,10 @@ export function RequestPanel({ event, onChange }: RequestPanelProps) {
             <p className="text-xs text-ink-500">Dikirim {formatDateTime(active.created_at)}</p>
           </div>
 
-          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 items-stretch text-sm">
-            <div className="rounded-xl bg-white border border-line px-3 py-2 h-full">
-              <dt className="text-[11px] font-bold text-ink-500 uppercase">Perkiraan tiba di lokasi</dt>
-              <dd className="mt-0.5 text-navy-900">{formatDateTime(active.arrival_estimate)}</dd>
-            </div>
-            <div className="rounded-xl bg-white border border-line px-3 py-2 h-full">
-              <dt className="text-[11px] font-bold text-ink-500 uppercase">Pesanmu</dt>
-              <dd className="mt-0.5 text-navy-900">{active.note}</dd>
-            </div>
-          </dl>
+          <div className="rounded-xl bg-white border border-line px-3 py-2 text-sm">
+            <p className="text-[11px] font-bold text-ink-500 uppercase">Pesanmu</p>
+            <p className="mt-0.5 text-navy-900">{active.note}</p>
+          </div>
 
           <NeedsDetails title="Kebutuhan yang dikirim" profile={active.needs_snapshot} footnote="Salinan profilmu saat permintaan dikirim." />
 
@@ -317,25 +303,7 @@ export function RequestPanel({ event, onChange }: RequestPanelProps) {
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 items-stretch">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="arrival" className="text-sm font-semibold text-navy-900">
-                Perkiraan waktu tiba
-              </label>
-              <input
-                id="arrival"
-                type="datetime-local"
-                value={arrival}
-                onChange={(e) => setArrival(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-line bg-bg text-sm focus:outline-none focus:border-navy-500"
-                required
-              />
-              <p className="text-xs text-ink-500">
-                Kapan kamu perkirakan tiba di lokasi, agar penyelenggara bisa menyiapkan bantuan. Event: {formatDateTime(event.starts_at)} –{" "}
-                {formatDateTime(event.ends_at)}.
-              </p>
-              {arrivalWarning && <p className="text-xs font-bold text-ink-700">⚠ {arrivalWarning}</p>}
-            </div>
+          <div className="grid grid-cols-1 gap-3">
             <div className="flex flex-col gap-1">
               <label htmlFor="note" className="text-sm font-semibold text-navy-900">
                 Pesan untuk penyelenggara
