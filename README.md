@@ -1,6 +1,6 @@
 <div align="center">
 
-# EventEase — Frontend Web Application
+# EventEase - Frontend Web Application
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.3.5-black?style=flat&logo=nextdotjs)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.8-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
@@ -8,7 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 <p align="center">
-  EventEase is an inclusive platform that empowers individuals with mobility access needs—such as wheelchair users, crutch users, seniors, pregnant people, and stroller users—to make confident, informed decisions when attending public events.
+  EventEase is an inclusive platform that empowers individuals with mobility access needs - such as wheelchair users, crutch users, seniors, pregnant people, and stroller users - to make confident, informed decisions when attending public events.
 </p>
 
 </div>
@@ -17,92 +17,144 @@
 
 Generic accessibility labels like "Accessible" vs "Not Accessible" omit critical venue details. They fail to communicate whether a step-free entrance exists, if accessible restrooms are available, or how far attendees must walk from a drop-off point to the main venue area.
 
-EventEase solves this gap by bridging personalized attendee needs with organizer venue claims across seven physical accessibility dimensions. The frontend provides a seamless, highly-accessible, and visually rich interface for:
-1. **Attendees** to view transparent 0–100% match scores and submit accessibility requests.
-2. **Organizers** to manage their events, review incoming accessibility requests, and monitor their reliability scores.
+EventEase solves this gap by bridging personalized attendee needs with organizer venue claims across seven physical accessibility dimensions. This repository is the web interface for that journey:
+
+1. **Attendees** set their needs, browse events with a personal 0-100 match score, send accessibility requests, accept the organizer's answer, and verify the result after the event.
+2. **Organizers** publish events with their accessibility claims, answer incoming requests, and follow their reliability score.
+
+The scoring and data live in the backend. See [BE-EventEase](https://github.com/NAKBK/BE-EventEase).
 
 ## Technical Architecture & Tech Stack
 
 ```text
-       ┌────────────────┐
-       │   Frontend     │
-       │ (Next.js / FE) │
-       │  ├── App Router│
-       │  ├── Tailwind  │
-       │  └── Framer    │
-       └───────┬────────┘
-               │ HTTP / REST API (Fetch)
-               ▼
+       ┌────────────────────┐
+       │ Frontend (this)    │
+       │ Next.js App Router │
+       │ Tailwind CSS       │
+       └─────────┬──────────┘
+                 │ HTTP / REST API
+                 ▼
  ┌────────────────────────────┐
  │  BE-EventEase (FastAPI)    │
+ │  Match score, requests,    │
+ │  verification, reliability │
  └────────────────────────────┘
 ```
 
-- **Framework:** Next.js 16.3.5 (App Router)
-- **UI & Styling:** Tailwind CSS v4, `shadcn/ui`, `lightswind`, and `@base-ui/react`
-- **Animations:** Framer Motion (`framer-motion`) & `tw-animate-css`
+- **Framework:** Next.js 16 (App Router) with React 19
 - **Language:** TypeScript
+- **Styling:** Tailwind CSS v4, `shadcn/ui`, `lightswind`, `@base-ui/react`
+- **Animation:** Framer Motion, `tw-animate-css`
+- **Maps:** Leaflet with React Leaflet
 - **Icons:** Lucide React
 
-## Key Frontend Decisions
+Exact versions are listed in `package.json`.
 
-- **Server and Client Components:** The application aggressively uses Server Components where possible for fast initial loads and SEO, only dropping into `"use client"` for interactive elements (like the Magic Card UI, Animated Text, and forms).
-- **Role-Based Routing via State:** Since this is a hackathon/MVP build, role parsing (`attendee` vs `organizer`) relies on `localStorage` tokens upon login to dynamically adjust Navbar layouts and restrict access to specific views (e.g., Organizer Dashboard vs Attendee Request History).
-- **Rich, Premium UI with Custom Animations:** Instead of standard generic UI kits, the frontend integrates complex micro-animations (like `ShineBorder`, `InteractiveGridPattern`, and `TextRoll`) to provide an emotional, premium, and trustworthy user experience.
-- **Form Controls:** Registration, Login, and Event Creation utilize controlled React state coupled with native HTML5 validation constraints before submitting JSON payloads to the FastAPI backend.
+## Key Justification
 
-## Quick Start Guide
+Short version of the choices a reviewer might question. The full list of differences from the proposal, with reasons, is in [`docs/PERUBAHAN.md`](docs/PERUBAHAN.md).
 
-### 1. System Requirements
-- Node.js `>= 20.x`
-- npm (or pnpm/yarn)
+- **The frontend never calculates the match score or the reliability score.** It displays what the backend returns, including the per-attribute breakdown, the list of unknown claims, and the weight version. This keeps one source of truth and avoids two screens showing different numbers.
+- **Unknown information is shown as unknown.** If an organizer has not stated a claim, the app says so and explains that it counts as not fulfilled, instead of quietly assuming the venue is accessible.
+- **Scores are labeled as provisional.** The match weights are not yet derived from a user panel study, so the app shows the weight version next to the score. See [entry 1](docs/PERUBAHAN.md).
+- **Needs are entered as a checklist, not as a diagnosis.** Six required or not-required choices and a walking distance tolerance describe what a person needs without any medical label.
+- **A commitment requires the attendee's acceptance.** An organizer's response only becomes a saved commitment after the attendee accepts it, and only accepted commitments can be verified after the event.
+- **Routes and in-venue navigation are not shown.** No verified venue map data exists, so the app does not guess. See [entry 3](docs/PERUBAHAN.md).
 
-### 2. Dependency Setup
+## Prerequisites
 
-Install the required packages:
+- Node.js 20 or newer
+- npm (bundled with Node.js)
+- An internet connection in the browser, for Google Fonts and OpenStreetMap map tiles
+- A running EventEase backend. Either run [BE-EventEase](https://github.com/NAKBK/BE-EventEase) locally (default `http://localhost:8000`), or point the frontend to a hosted instance.
+
+## How to Build and Run
+
+### 1. Install dependencies
+
 ```bash
 npm install
 ```
 
-### 3. Environment Configuration (`.env.local`)
-Create a `.env.local` file at the root of your project:
+The repository includes an `.npmrc` with `legacy-peer-deps=true`, so no extra flags are needed.
+
+### 2. Configure the backend address
+
+Create a `.env.local` file in the project root:
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-### 4. Run Local Development Server
+Use the address of your backend without a trailing slash. If you run the backend locally, its `CORS_ORIGINS` setting must include `http://localhost:3000`, which is the default in the backend's `.env.example`.
+
+### 3. Run in development
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
+
+### 4. Build and run for production
+
+```bash
+npm run build
+npm run start
+```
+
+`npm run lint` runs the linter.
+
+## Trying the Full Journey
+
+The backend ships with seeded Jakarta events, so no data entry is needed to start. There is no demo login in the frontend. Register two accounts on the Daftar page, one per role, using two browsers or a private window for the second:
+
+1. **Attendee:** open Profil and save your needs, then browse events on the home page and compare scores. Open an event, read the breakdown, and send an accessibility request.
+2. **Organizer:** on the dashboard, open the new request and respond with a decision and a note. Under Acara you can also register a new event with its seven accessibility claims.
+3. **Attendee:** open Permintaan, read the response, and accept it. Then open a finished event under Verifikasi and rate each of the seven attributes.
+4. **Organizer:** the reliability score on the dashboard and profile now reflects the verification.
+
+The same journey is described step by step at the API level in the backend's [demo flow](https://github.com/NAKBK/BE-EventEase/blob/main/docs/flows.md).
+
+## Pages
+
+| Route | Who | Purpose |
+| --- | --- | --- |
+| `/` | Everyone | Landing page for visitors, event discovery for attendees |
+| `/login`, `/register` | Visitors | Sign in or create an account with a role |
+| `/profile` | Both | Attendees edit their needs. Organizers see their score and event history |
+| `/events/[id]` | Attendee | Event details, match breakdown, request form |
+| `/history` | Attendee | All accessibility requests, with accept or decline |
+| `/request` | Attendee | Send a request for a chosen event |
+| `/verification` | Attendee | Post-event verification |
+| `/dashboard` | Organizer | Request counters, reliability score, respond to requests |
+| `/event` | Organizer | List and register events, with photos and venue location |
 
 ## Project Structure
 
 ```text
 FE-EventEase/
 ├── src/
-│   ├── app/                   # Next.js App Router Pages
-│   │   ├── dashboard/         # Organizer Dashboard
-│   │   ├── event/             # Event Management (Organizer)
-│   │   ├── login/             # Auth Login Route
-│   │   ├── profile/           # User/Organizer Profiles
-│   │   ├── register/          # Auth Registration Route
-│   │   ├── globals.css        # Global CSS & Tailwind Entry
-│   │   └── page.tsx           # Main Landing Page
-│   ├── components/            # Reusable UI Components
-│   │   ├── lightswind/        # Complex animated UI blocks
-│   │   ├── ui/                # Core base components (Buttons, Inputs, etc.)
-│   │   └── Navbar, Footer     # Global layout components
-│   └── lib/                   # Utility functions (e.g. `cn` for class merging)
-├── public/                    # Static assets (images, logos)
-├── requirements.md            # Detailed dependencies & tech stack list
-├── package.json               # NPM Dependencies & Scripts
-├── tailwind.config.ts         # Tailwind configuration
-└── next.config.mjs            # Next.js compiler configuration
+│   ├── app/                   # Pages (Next.js App Router)
+│   ├── components/
+│   │   ├── attendee/          # Home, filters, map, requests, profile
+│   │   ├── organizer/         # Venue location picker
+│   │   ├── lightswind/        # Animated UI blocks
+│   │   └── ui/                # Base components (buttons, cards, etc.)
+│   ├── hooks/                 # Shared React hooks
+│   └── lib/
+│       ├── api.ts             # Backend calls, types, session handling
+│       └── attendee-ui.ts     # Labels and formatting for attendee screens
+├── public/                    # Static assets
+├── docs/                      # Project documentation
+├── .npmrc                     # npm settings
+└── package.json               # Dependencies and scripts
 ```
 
-## Documentation & Further Reading
+## Documentation
 
-1. Check out `requirements.md` for a comprehensive list of all UI libraries and dependencies used in this project.
-2. For details on the Backend API contracts that this frontend consumes, please refer to the backend repository documentation.
+This README is the quick tour. For anything deeper, see [`docs/`](docs/):
+
+1. [Changes from the Proposal (PERUBAHAN.md)](docs/PERUBAHAN.md)
+2. [Backend repository and its docs](https://github.com/NAKBK/BE-EventEase)
+3. [License](LICENSE)
