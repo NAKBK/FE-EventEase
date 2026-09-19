@@ -157,3 +157,4 @@ This README is the quick tour. For anything deeper, see [`docs/`](docs/):
 
 1. [Changes from the Proposal (PERUBAHAN.md)](docs/PERUBAHAN.md)
 2. [Backend repository and its docs](https://github.com/NAKBK/BE-EventEase)
+3. [License](LICENSE)
